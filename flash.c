@@ -68,7 +68,7 @@ struct blockStruct
 #define MAX_BLOCKS 35 /* a 16m chip has 35 blocks (SA0-SA34) */
 unsigned char blocksDirty[2][MAX_BLOCKS];  /* max of 2 chips */
 unsigned char needToWriteFile = 0;
-char ngfFilename[300] = {0};
+char ngfFilename[2048 + 256] = {0};
 
 #define FLASH_WRITE 0
 #define FLASH_ERASE 1
@@ -176,8 +176,11 @@ void setupNGFfilename(void)
 {
    int dotSpot = -1, pos = 0;
    int slashSpot = -1;
+   size_t cur;
 
-   strcpy(ngfFilename, SAVEGAME_DIR);
+   ngfFilename[0] = '\0';
+   strncpy(ngfFilename, SAVEGAME_DIR, sizeof(ngfFilename) - 1);
+   ngfFilename[sizeof(ngfFilename) - 1] = '\0';
 
    pos = strlen(m_emuInfo.RomFileName);
 
@@ -192,7 +195,10 @@ void setupNGFfilename(void)
       pos--;
    }
 
-   strcat(ngfFilename, &m_emuInfo.RomFileName[slashSpot+1]);
+   cur = strlen(ngfFilename);
+   strncpy(ngfFilename + cur, &m_emuInfo.RomFileName[slashSpot+1],
+         sizeof(ngfFilename) - cur - 1);
+   ngfFilename[sizeof(ngfFilename) - 1] = '\0';
 
    for(pos=strlen(ngfFilename);pos>=0 && dotSpot == -1; pos--)
    {
@@ -202,7 +208,10 @@ void setupNGFfilename(void)
    if(dotSpot == -1)
       return;
 
-   strcpy(&ngfFilename[dotSpot+1], "ngf");
+   /* dotSpot+1 .. need 4 bytes for "ngf\0"; guaranteed to fit since the
+    * buffer is far larger and dotSpot indexes within it. */
+   if((size_t)dotSpot + 4 < sizeof(ngfFilename))
+      strcpy(&ngfFilename[dotSpot+1], "ngf");
 }
 
 /* write all the dirty blocks out to a file */
@@ -328,6 +337,10 @@ void loadSaveGameFile(void)
    void *blockMem;
    struct NGFheaderStruct NGFheader;
    struct blockStruct *blockHeader;
+   unsigned int payload_len;
+   unsigned int cursor;
+   unsigned int blk_dest;
+   unsigned int blk_len;
 
    setupNGFfilename();
 
@@ -356,61 +369,101 @@ void loadSaveGameFile(void)
       return;
    }
 
-   blockMem = malloc(NGFheader.fileLen - sizeof(struct NGFheaderStruct));
-   /* error handling? */
-   if(!blockMem)
+   if(NGFheader.fileLen < sizeof(struct NGFheaderStruct))
+   {
+      filestream_close(ngfFile);
       return;
+   }
+   if(NGFheader.numBlocks > MAX_BLOCKS)
+   {
+      filestream_close(ngfFile);
+      return;
+   }
 
+   payload_len = NGFheader.fileLen - (unsigned int)sizeof(struct NGFheaderStruct);
+
+   /* Cap payload so a malformed file cannot request a huge allocation:
+    * at most MAX_BLOCKS block headers plus the full cart image. */
+   if(payload_len > (unsigned int)(MAX_BLOCKS * sizeof(struct blockStruct)
+                                   + MAINROM_SIZE_MAX))
+   {
+      filestream_close(ngfFile);
+      return;
+   }
+
+   blockMem = malloc(payload_len);
+   if(!blockMem)
+   {
+      filestream_close(ngfFile);
+      return;
+   }
 
    blocks = (unsigned char *)blockMem;
 
-   bytes = filestream_read(ngfFile, blocks,
-         NGFheader.fileLen - sizeof(struct NGFheaderStruct));
+   bytes = filestream_read(ngfFile, blocks, payload_len);
    filestream_close(ngfFile);
 
-   if(bytes != (NGFheader.fileLen - sizeof(struct NGFheaderStruct)))
+   if(bytes != (int64_t)payload_len)
    {
       free(blockMem);
       return;
    }
 
-   if(NGFheader.numBlocks > MAX_BLOCKS)
-   {
-      free(blockMem);
-      return;
-   }
-
-   /* loop through the blocks and insert them into mainrom */
+   /* Insert each block into mainrom. cursor tracks consumed payload bytes so
+    * no header or body is read past the buffer; each destination range is
+    * bounds-checked against mainrom before the copy. */
+   cursor = 0;
    for(i=0; i < NGFheader.numBlocks; i++)
    {
-      blockHeader = (struct blockStruct*) blocks;
-      blocks += sizeof(struct blockStruct);
-
-      if(!((blockHeader->NGPCaddr >= 0x200000 && blockHeader->NGPCaddr < 0x400000)
-               ||
-               (blockHeader->NGPCaddr >= 0x800000 && blockHeader->NGPCaddr < 0xA00000) ))
+      if(cursor + sizeof(struct blockStruct) > payload_len)
       {
          free(blockMem);
          return;
       }
-      if(blockHeader->NGPCaddr >= 0x800000)
+
+      blockHeader = (struct blockStruct*) (blocks + cursor);
+      cursor += (unsigned int)sizeof(struct blockStruct);
+
+      blk_dest = blockHeader->NGPCaddr;
+      blk_len  = blockHeader->len;
+
+      if(!((blk_dest >= 0x200000 && blk_dest < 0x400000)
+               ||
+               (blk_dest >= 0x800000 && blk_dest < 0xA00000) ))
       {
-         blockHeader->NGPCaddr -= 0x600000;
-         blocksDirty[1][blockNumFromAddr(blockHeader->NGPCaddr-0x200000)] = 1;
-      }
-      else if(blockHeader->NGPCaddr >= 0x200000)
-      {
-         blockHeader->NGPCaddr -= 0x200000;
-         blocksDirty[0][blockNumFromAddr(blockHeader->NGPCaddr)] = 1;
+         free(blockMem);
+         return;
       }
 
-      memcpy(&mainrom[blockHeader->NGPCaddr], blocks, blockHeader->len);
+      if(blk_len > payload_len || cursor + blk_len > payload_len)
+      {
+         free(blockMem);
+         return;
+      }
 
-      blocks += blockHeader->len;
+      if(blk_dest >= 0x800000)
+      {
+         blk_dest -= 0x600000;
+         blocksDirty[1][blockNumFromAddr(blk_dest-0x200000)] = 1;
+      }
+      else /* blk_dest >= 0x200000 */
+      {
+         blk_dest -= 0x200000;
+         blocksDirty[0][blockNumFromAddr(blk_dest)] = 1;
+      }
+
+      if((uint64_t)blk_dest + blk_len > (uint64_t)MAINROM_SIZE_MAX)
+      {
+         free(blockMem);
+         return;
+      }
+
+      memcpy(&mainrom[blk_dest], blocks + cursor, blk_len);
+
+      cursor += blk_len;
    }
 
    free(blockMem);
-
 }
 
 void flashWriteByte(unsigned int addr, unsigned char data, unsigned char operation)
