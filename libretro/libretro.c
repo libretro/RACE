@@ -447,12 +447,17 @@ size_t retro_serialize_size(void)
 
 bool retro_serialize(void *data, size_t size)
 {
+   if (size < state_get_size())
+      return false;
    return state_store_mem(data);
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
-   int ret = state_restore_mem((void*)data);
+   int ret;
+   if (size < state_get_size())
+      return false;
+   ret = state_restore_mem((void*)data);
    return (ret == 1);
 }
 
@@ -513,6 +518,15 @@ bool retro_load_game(const struct retro_game_info *info)
 
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
 
+   /* If a previous load left a screen allocated (e.g. frontend re-loads
+    * without unloading), release it before allocating a new one. */
+   if (screen)
+   {
+      free(screen->pixels);
+      free(screen);
+      screen = NULL;
+   }
+
    screen         = (struct ngp_screen*)calloc(1, sizeof(*screen));
 
    if (!screen)
@@ -526,6 +540,7 @@ bool retro_load_game(const struct retro_game_info *info)
    if (!screen->pixels)
    {
       free(screen);
+      screen = NULL;
       return false;
    }
 
@@ -534,10 +549,20 @@ bool retro_load_game(const struct retro_game_info *info)
 
    if (!race_initialize_system(content_path,
          content_data, content_size))
+   {
+      free(screen->pixels);
+      free(screen);
+      screen = NULL;
       return false;
+   }
 
    if (!race_initialize_sound())
+   {
+      free(screen->pixels);
+      free(screen);
+      screen = NULL;
       return false;
+   }
 
    {
       /* TODO: Mappings might need updating
