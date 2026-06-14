@@ -119,6 +119,12 @@ static int state_store(race_state_t *rs)
 #endif
   extern int sndCycles;
 
+  /* Zero the whole structure first so that compiler padding between fields
+   * is written deterministically. Without this, padding holds uninitialised
+   * memory and two saves of identical emulator state can differ byte-for-byte,
+   * which breaks netplay state hashing, runahead and rewind dedup. */
+  memset(rs, 0, sizeof(*rs));
+
   /* TLCS-900h Registers */
   rs->pc = gen_regsPC;
   rs->sr = gen_regsSR;
