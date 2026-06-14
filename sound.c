@@ -37,26 +37,17 @@ int neopop_audio_accurate = 0; /* 0 = fast per-sample, 1 = band-limited Blip */
  * a pure observer of toneChip/noiseChip avoids duplicating the register decode. */
 static void neopop_blip_sync_from_chips(void)
 {
-   int c, vol, div, ctrl, nfreq;
+   int c;
 
    for (c = 0; c < 3; c++)
-   {
-      div = toneChip.Register[c * 2] & 0x3FF;       /* 10-bit tone divisor */
-      vol = toneChip.Register[c * 2 + 1] & 0x0F;    /* volume index */
-      neopop_blip_sync_tone(c, div, vol);
-   }
+      neopop_blip_sync_tone(c,
+            neopop_sound_tone_divider(c),
+            neopop_sound_tone_volume(c));
 
-   ctrl = noiseChip.Register[6] & 0x07;             /* noise mode/rate */
-   vol  = noiseChip.Register[7] & 0x0F;
-   /* rate select: 0,1,2 => fixed shift rates; 3 => track tone 2. */
-   switch (ctrl & 0x03)
-   {
-      case 0:  nfreq = 16;  break;
-      case 1:  nfreq = 32;  break;
-      case 2:  nfreq = 64;  break;
-      default: nfreq = (toneChip.Register[4] & 0x3FF); break;
-   }
-   neopop_blip_sync_noise(nfreq, vol, (ctrl & 0x04) ? 1 : 0);
+   neopop_blip_sync_noise(
+         neopop_sound_noise_divider(),
+         neopop_sound_noise_volume(),
+         neopop_sound_noise_feedback_periodic());
 }
 
 void soundStep(int cycles)

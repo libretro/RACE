@@ -65,6 +65,14 @@ void sound_update(_u16* chip_buffer, int length_bytes);
 void dac_writeL(unsigned char a);
 void dac_write(unsigned char a);
 
+/* Accessors used by the band-limited (Blip) audio path so it observes the same
+ * decoded oscillator state as the per-sample synth. */
+int neopop_sound_tone_divider(int chan);
+int neopop_sound_tone_volume(int chan);
+int neopop_sound_noise_divider(void);
+int neopop_sound_noise_volume(void);
+int neopop_sound_noise_feedback_periodic(void);
+
 #ifdef __cplusplus
 }
 #endif

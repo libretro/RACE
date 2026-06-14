@@ -26,7 +26,13 @@
 
 #define NGPC_PSG_CLOCK 3072000      /* PSG chip clock (Hz) */
 #define NGPC_CPU_CLOCK 6144000      /* CPU clock; soundStep cycles are in these units */
-#define BLIP_RANGE     0x8000       /* synth amplitude range */
+/* Synth volume range. With Blip_Synth_set_volume(v, range) the output is
+ * delta * (v/range) * 2^16, so range = 2^17 makes a transition delta map to
+ * delta/2 of output. The decoded per-channel volume (a VolTable value, 0..
+ * MAX_OUTPUT/3) is emitted as that delta, which reproduces the per-sample
+ * path's amplitude (validated: matched RMS, no clipping) and keeps three
+ * channels at full volume within the 16-bit range. */
+#define BLIP_TONE_RANGE 131072      /* 2^17 */
 
 /* Per-channel state for the three tones and the noise channel. We re-derive
  * frequency/volume from the shared toneChip/noiseChip register state, but keep
@@ -60,22 +66,6 @@ static long  blip_ts;             /* current sub-frame timestamp (chip cycles) *
 static int   blip_ready = 0;
 static int   blip_rate  = 44100;
 
-/* SN76489 volume table is in neopopsound.c (VolTable). We mirror the same
- * 2dB/step curve here, scaled to BLIP_RANGE. */
-static int VolTab[16];
-
-static void build_voltab(void)
-{
-   int i;
-   double out = (double)(BLIP_RANGE / 3);
-   for (i = 0; i < 15; i++)
-   {
-      VolTab[i] = (int)out;
-      out /= 1.258925412; /* 2 dB per step */
-   }
-   VolTab[15] = 0;
-}
-
 void neopop_blip_init(int sample_rate)
 {
    int i;
@@ -86,10 +76,8 @@ void neopop_blip_init(int sample_rate)
    Blip_Buffer_set_clock_rate(&bbuf, NGPC_CPU_CLOCK);
    Blip_Buffer_bass_freq(&bbuf, 20);
 
-   Blip_Synth_set_volume(&synth_tone, 0.30, BLIP_RANGE);
+   Blip_Synth_set_volume(&synth_tone, 1.0, BLIP_TONE_RANGE);
    Blip_Synth_set_volume(&synth_dac,  0.40, 0xFF);
-
-   build_voltab();
 
    memset(tones, 0, sizeof(tones));
    memset(&noise, 0, sizeof(noise));
@@ -180,19 +168,22 @@ void neopop_blip_run(int chip_cycles)
 /* Pull current register state from the shared chips into our synth params.
  * Called after each WriteSoundChip so frequency/volume changes take effect at
  * the right timestamp (channels are already advanced to blip_ts by the caller). */
-void neopop_blip_sync_tone(int chan, int period_div, int volume_idx)
+void neopop_blip_sync_tone(int chan, int period_div, int volume)
 {
    if (chan < 0 || chan > 2)
       return;
-   /* SN76489: tone period = divider * 16 chip cycles (half-period = *16). */
-   tones[chan].period = (period_div ? period_div : 1) * 32; /* div*16 chip cycles, *2 for CPU-cycle timebase */
-   tones[chan].volume = VolTab[volume_idx & 0x0F];
+   /* period_div is the raw tone divider; the tone toggles every divider*16
+    * chip cycles, doubled to the CPU-cycle timebase the synth runs on. */
+   tones[chan].period = (period_div ? period_div : 1) * 32;
+   /* volume is the already-decoded amplitude (a VolTable value), matching what
+    * the per-sample path multiplies in. */
+   tones[chan].volume = volume;
 }
 
-void neopop_blip_sync_noise(int period_div, int volume_idx, int feedback_periodic)
+void neopop_blip_sync_noise(int period_div, int volume, int feedback_periodic)
 {
    noise.period = (period_div ? period_div : 1) * 32;
-   noise.volume = VolTab[volume_idx & 0x0F];
+   noise.volume = volume;
    noise.fb     = feedback_periodic ? 0x4000 : 0x6000;
 }
 

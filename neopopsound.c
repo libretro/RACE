@@ -465,3 +465,40 @@ int sound_system_init(void)
    system_sound_chipreset();	/* Resets chips */
    return 1;
 }
+
+/* Accessors for the band-limited (Blip) audio path, so it reads exactly the
+ * same decoded oscillator state that sample_chip_tone/sample_chip_noise use,
+ * rather than re-decoding the registers (which split tone frequency and volume
+ * across the two T6W28 chips and is easy to get wrong). */
+int neopop_sound_tone_divider(int chan)
+{
+   if (chan < 0 || chan > 2 || UpdateStep == 0)
+      return 1;
+   /* Period[c] == UpdateStep * raw_divider; recover the raw divider. */
+   return (int)(toneChip.Period[chan] / UpdateStep);
+}
+
+int neopop_sound_tone_volume(int chan)
+{
+   if (chan < 0 || chan > 2)
+      return 0;
+   return toneChip.Volume[chan];
+}
+
+int neopop_sound_noise_divider(void)
+{
+   if (UpdateStep == 0)
+      return 1;
+   return (int)(noiseChip.Period[3] / UpdateStep);
+}
+
+int neopop_sound_noise_volume(void)
+{
+   return noiseChip.Volume[3];
+}
+
+int neopop_sound_noise_feedback_periodic(void)
+{
+   /* FB_PNOISE (periodic) vs FB_WNOISE (white). Match on the periodic mask. */
+   return (noiseChip.NoiseFB == FB_PNOISE) ? 1 : 0;
+}
