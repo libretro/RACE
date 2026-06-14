@@ -222,11 +222,13 @@ static int initRom(void)
          return TRUE;
       }
 
-      log_cb(RETRO_LOG_ERROR, "Not a valid or unsupported rom file.\n");
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "Not a valid or unsupported rom file.\n");
       return FALSE;
    }
 
-   log_cb(RETRO_LOG_ERROR, "Not a valid or unsupported rom file. romFound==FALSE\n");
+   if (log_cb)
+      log_cb(RETRO_LOG_ERROR, "Not a valid or unsupported rom file. romFound==FALSE\n");
    return FALSE;
 }
 
@@ -250,9 +252,16 @@ int handleInputFile(const char *romName,
 		int size = romSize > MAINROM_SIZE_MAX ?
 				MAINROM_SIZE_MAX : romSize;
 
+		/* Fill unused cart space with open-bus (0xFF) so reads past the
+		 * actual ROM are deterministic and do not retain stale data from
+		 * a previously loaded game. */
+		memset(mainrom, 0xFF, MAINROM_SIZE_MAX);
+
 		m_emuInfo.romSize = size;
 		memcpy(mainrom, romData, size);
-		strcpy(m_emuInfo.RomFileName, romName);
+		strncpy(m_emuInfo.RomFileName, romName,
+				sizeof(m_emuInfo.RomFileName) - 1);
+		m_emuInfo.RomFileName[sizeof(m_emuInfo.RomFileName) - 1] = '\0';
 	}
 	else
 	{
@@ -263,26 +272,36 @@ int handleInputFile(const char *romName,
 				RETRO_VFS_FILE_ACCESS_HINT_NONE);
 		if(!romFile)
 		{
-			log_cb(RETRO_LOG_ERROR, "Couldn't open %s file\n", romName);
+			if (log_cb)
+				log_cb(RETRO_LOG_ERROR, "Couldn't open %s file\n", romName);
 			return 0;
 		}
+
+		/* Fill unused cart space with open-bus (0xFF) before reading so a
+		 * ROM smaller than the cart leaves deterministic bytes and does
+		 * not retain data from a previously loaded game. */
+		memset(mainrom, 0xFF, MAINROM_SIZE_MAX);
 
 		size = filestream_read(romFile, mainrom, MAINROM_SIZE_MAX);
 		filestream_close(romFile);
 
 		if (size <= 0)
 		{
-			log_cb(RETRO_LOG_ERROR, "Couldn't read %s file\n", romName);
+			if (log_cb)
+				log_cb(RETRO_LOG_ERROR, "Couldn't read %s file\n", romName);
 			return 0;
 		}
 
 		m_emuInfo.romSize = (int)size;
-		strcpy(m_emuInfo.RomFileName, romName);
+		strncpy(m_emuInfo.RomFileName, romName,
+				sizeof(m_emuInfo.RomFileName) - 1);
+		m_emuInfo.RomFileName[sizeof(m_emuInfo.RomFileName) - 1] = '\0';
 	}
 
 	if (!initRom())
 	{
-		log_cb(RETRO_LOG_ERROR, "initRom couldn't handle %s file\n", romName);
+		if (log_cb)
+			log_cb(RETRO_LOG_ERROR, "initRom couldn't handle %s file\n", romName);
 		return 0;
 	}
 
