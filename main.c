@@ -32,6 +32,9 @@
 #endif
 #endif
 
+/* address where the state of the input device(s) is stored */
+unsigned char	ngpInputState = 0;
+
 extern int finscan;
 extern int language;
 extern int tipo_consola;

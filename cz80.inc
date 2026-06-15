@@ -6,17 +6,9 @@
 /*                                                                              */
 /********************************************************************************/
 
-// use zR8 for B/C/D/E/H/L registers only
-// use zR16 for BC/DE/HL registers only
+/* use zR8 for B/C/D/E/H/L registers only */
+/* use zR16 for BC/DE/HL registers only */
 
-#ifdef CZ80_USE_MAME_CHANGE_PC
-#include "memory.h"
-#undef READ_WORD
-#undef WRITE_WORD
-#endif
-
-//#define mame4all_cz80_rom OP_ROM
-//#define mame4all_cz80_ram OP_RAM
 extern unsigned char *mame4all_cz80_rom;
 extern unsigned char *mame4all_cz80_ram;
 
@@ -97,7 +89,6 @@ void cpu_writeport(int Port,int Value);
 #define zIFF1           CPU->IFF.B.L
 #define zIFF2           CPU->IFF.B.H
 
-
 #if CZ80_USE_JUMPTABLE
 #define _SSOP(A,B) A##B
 #define OP(A) _SSOP(OP,A)
@@ -113,11 +104,9 @@ void cpu_writeport(int Port,int Value);
 #define OPXYCB(A) case A
 #endif
 
-#define REAL_FETCH_BYTE              \
-    (*zPC++)
+#define REAL_FETCH_BYTE   (*zPC++)
 
-#define REAL_FETCH_BYTE_S            \
-    ((int8_t)(*zPC++))
+#define REAL_FETCH_BYTE_S ((int8_t)(*zPC++))
 
 #define FETCH_BYTE(A)		\
    A = (mame4all_cz80_ram[((uintptr_t)zPC)-((uintptr_t)mame4all_cz80_rom)]); \
@@ -147,43 +136,28 @@ void cpu_writeport(int Port,int Value);
         goto Cz80_Exec;
 #endif
 
-#ifdef CZ80_USE_MAME_CHANGE_PC
-#define SET_PC(A) \
- change_pc16(A) \
- zPC = (uint8_t*)&mame4all_cz80_rom[A]
-#else
 #define SET_PC(A) zPC = (uint8_t*)&mame4all_cz80_rom[A]
-#endif
 
-#define PRE_IO                  \
-    CPU->CycleIO = Z80_ICount;
+#define PRE_IO   CPU->CycleIO = Z80_ICount;
 
-#define POST_IO                 \
-    Z80_ICount = CPU->CycleIO;
+#define POST_IO  Z80_ICount = CPU->CycleIO;
 
-#define READ_BYTE(A, D)                 \
-    D = cpu_readmem16(A);
+#define READ_BYTE(A, D) D = cpu_readmem16(A);
 
 #if CZ80_USE_WORD_HANDLER
-#define READ_WORD(A, D)                 \
-    D = CPU->Read_Word(A);
+#define READ_WORD(A, D)  D = CPU->Read_Word(A);
 #elif defined(MSB_FIRST)
-#define READ_WORD(A, D)                 \
-    D = (cpu_readmem16(A) << 8) | cpu_readmem16((A) + 1);
+#define READ_WORD(A, D)  D = (cpu_readmem16(A) << 8) | cpu_readmem16((A) + 1);
 #else
-#define READ_WORD(A, D)                 \
-    D = cpu_readmem16(A) | (cpu_readmem16((A) + 1) << 8);
+#define READ_WORD(A, D)  D = cpu_readmem16(A) | (cpu_readmem16((A) + 1) << 8);
 #endif
 
-#define READSX_BYTE(A, D)               \
-    D = (int8_t)cpu_readmem16(A);
+#define READSX_BYTE(A, D) D = (int8_t)cpu_readmem16(A);
 
-#define WRITE_BYTE(A, D)                \
-    cpu_writemem16(A, D);
+#define WRITE_BYTE(A, D)  cpu_writemem16(A, D);
 
 #if CZ80_USE_WORD_HANDLER
-#define WRITE_WORD(A, D)                \
-    cpu_writemem16(A, D);
+#define WRITE_WORD(A, D)  cpu_writemem16(A, D);
 #elif defined(MSB_FIRST)
 #define WRITE_WORD(A, D)                \
     cpu_writemem16(A, D);              \
@@ -212,8 +186,5 @@ void cpu_writeport(int Port,int Value);
         zSP = sp + 2;       \
     }
 
-#define IN(A, D)            \
-    D = cpu_readport(A);
-
-#define OUT(A, D)           \
-    cpu_writeport(A, D);
+#define IN(A, D)  D = cpu_readport(A);
+#define OUT(A, D) cpu_writeport(A, D);

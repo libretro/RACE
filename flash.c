@@ -24,7 +24,7 @@
 #include "types.h"
 #include "flash.h"
 
-/* Manuf ID's
+/* Manufacturer IDs
 Supported
 0x98		Toshiba
 0xEC		Samsung

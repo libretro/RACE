@@ -15,7 +15,6 @@
 #include "types.h"
 #include "neopopsound.h"
 #include "sound.h"
-#include "input.h"
 #include "graphics.h"
 #include "main.h"
 #include "flash.h"
@@ -33,6 +32,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern unsigned char	ngpInputState;
 
 /* Maximum ROM size is 4 megabytes */
 #define MAINROM_SIZE_MAX (4*1024*1024)
@@ -62,8 +63,6 @@ void DrZ80ngpMemWriteW(unsigned short data, unsigned short addr);
 void DrZ80ngpPortWriteB(unsigned short port, unsigned char data);
 unsigned char DrZ80ngpPortReadB(unsigned short port);
 #endif
-
-extern unsigned char realBIOSloaded;
 
 static INLINE unsigned char *get_address(unsigned int addr)
 {

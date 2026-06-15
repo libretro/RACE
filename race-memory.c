@@ -16,8 +16,6 @@
 
 #include "race-memory.h"
 #include "types.h"
-#include "input.h"		/* for Gameboy Input */
-#include "graphics.h"	/* for i/o ports of the game gear */
 #include "tlcs900h.h"
 #include "koyote_bin.h"
 
@@ -35,16 +33,15 @@
  * internal cpu RAM and internal I/O register (2KB + 160 bytes)
  */
 
-/* regular work RAM (32 kbytes?)
+/* Regular work RAM (32 kbytes?)
  * on the gameboy maximum of 128kbyte of RAM is possible, plus some internal ram (64KB) */
 unsigned char __attribute__ ((__aligned__(4))) mainram[(64+32+128)*1024];
-// rom area for roms (4 Megabyte)
+/* ROM area for roms (4 Megabyte) */
 unsigned char __attribute__ ((__aligned__(4))) mainrom[MAINROM_SIZE_MAX];
-// cpu internal ROM including vector table starting at 0xff0000
+/* CPU internal ROM including vector table starting at 0xff0000 */
 unsigned char __attribute__ ((__aligned__(4))) cpurom[256*1024];//prob only needs 0x10000
-//
 unsigned char __attribute__ ((__aligned__(4))) *cpuram;
-// declare ldc registers
+/* declare LDC registers */
 unsigned char __attribute__ ((__aligned__(4))) ldcRegs[64];
 
 //
@@ -59,14 +56,13 @@ unsigned char __attribute__ ((__aligned__(4))) ldcRegs[64];
 
 unsigned char realBIOSloaded = 0;
 
-
 ///////////////////////////////////////////////////////////////////
 //
 //// z80 memory instructions
 //
 ///////////////////////////////////////////////////////////////////
 
-// function place holders
+/* function place holders */
 unsigned char (*z80MemReadB)(unsigned short addr);
 unsigned short (*z80MemReadW)(unsigned short addr);
 void (*z80MemWriteB)(unsigned short addr, unsigned char data);
@@ -350,134 +346,138 @@ void mem_init(void)
 
 	cpuram = mainram;
 	memset(&mainram,0,sizeof(mainram));
-    switch(m_emuInfo.machine) {
-	case NGP:
-	case NGPC:
-		cpuram = &mainram[128*1024];
-		if(!loadBIOS())
-		{
-		    realBIOSloaded = 0;
-            memset(&cpurom,0,sizeof(cpurom));
+	switch(m_emuInfo.machine)
+	{
+		case NGP:
+		case NGPC:
+			cpuram = &mainram[128*1024];
+			if(!loadBIOS())
+			{
+				realBIOSloaded = 0;
+				memset(&cpurom,0,sizeof(cpurom));
 
-            //in theory, if we've loaded the BIOS, we shouldn't need much of this, but good luck with that.
-            // setup fake jump table for the additional bios calls
-            for (i=0; i<0x40; i++)
-            {
-                // using the 1A (reg) dummy instruction to emulate the bios
-                cpurom[0xe000 + 0x40 * i] = 0xc8;
-                cpurom[0xe001 + 0x40 * i] = 0x1a;
-                cpurom[0xe002 + 0x40 * i] = i;
-                cpurom[0xe003 + 0x40 * i] = 0x0e;
-                *((unsigned int *)(&cpurom[0xfe00 + 4*i])) = (unsigned int)0x00ffe000 + 0x40 * i;
-            }
+				//in theory, if we've loaded the BIOS, we shouldn't need much of this, but good luck with that.
+				// setup fake jump table for the additional bios calls
+				for (i=0; i<0x40; i++)
+				{
+					// using the 1A (reg) dummy instruction to emulate the bios
+					cpurom[0xe000 + 0x40 * i] = 0xc8;
+					cpurom[0xe001 + 0x40 * i] = 0x1a;
+					cpurom[0xe002 + 0x40 * i] = i;
+					cpurom[0xe003 + 0x40 * i] = 0x0e;
+					*((unsigned int *)(&cpurom[0xfe00 + 4*i])) = (unsigned int)0x00ffe000 + 0x40 * i;
+				}
 
-            // setup SWI 1 code & vector
-            x = 0xf000;
-            cpurom[x] = 0x17; x++; cpurom[x] = 0x03; x++;		// ldf 3
-            cpurom[x] = 0x3C; x++;								// push XIX
-            cpurom[x] = 0xC8; x++; cpurom[x] = 0xCC; x++;		// and w,1F
-            cpurom[x] = 0x1F; x++;
-            cpurom[x] = 0xC8; x++; cpurom[x] = 0x80; x++;		// add w,w
-            cpurom[x] = 0xC8; x++; cpurom[x] = 0x80; x++;		// add w,w
-            cpurom[x] = 0x44; x++; cpurom[x] = 0x00; x++;		// ld XIX,0x00FFFE00
-            cpurom[x] = 0xFE; x++; cpurom[x] = 0xFF; x++;		//
-            cpurom[x] = 0x00; x++;								//
-            cpurom[x] = 0xE3; x++; cpurom[x] = 0x03; x++;		// ld XIX,(XIX+W)
-            cpurom[x] = 0xF0; x++; cpurom[x] = 0xE1; x++;		//
-            cpurom[x] = 0x24; x++;								//
-            cpurom[x] = 0xB4; x++; cpurom[x] = 0xE8; x++;		// call XIX
-            cpurom[x] = 0x5C; x++;								// pop XIX
-            cpurom[x] = 0x07; x++;								// reti
-            *((unsigned int *)(&cpurom[0xff04])) = (unsigned int)0x00fff000;
-            // setup interrupt code
-            for(i=0; i<sizeof(ngpInterruptCode); i++) {
-                cpurom[0xf800+i] = ngpInterruptCode[i];
-            }
-            // setup interrupt vectors
-            for(i=0; i<sizeof(ngpVectors)/4; i++) {
-                *((unsigned int *)(&cpurom[0xff00+4*i])) = ngpVectors[i];
-            }
+				// setup SWI 1 code & vector
+				x = 0xf000;
+				cpurom[x] = 0x17; x++; cpurom[x] = 0x03; x++;		// ldf 3
+				cpurom[x] = 0x3C; x++;								// push XIX
+				cpurom[x] = 0xC8; x++; cpurom[x] = 0xCC; x++;		// and w,1F
+				cpurom[x] = 0x1F; x++;
+				cpurom[x] = 0xC8; x++; cpurom[x] = 0x80; x++;		// add w,w
+				cpurom[x] = 0xC8; x++; cpurom[x] = 0x80; x++;		// add w,w
+				cpurom[x] = 0x44; x++; cpurom[x] = 0x00; x++;		// ld XIX,0x00FFFE00
+				cpurom[x] = 0xFE; x++; cpurom[x] = 0xFF; x++;		//
+				cpurom[x] = 0x00; x++;								//
+				cpurom[x] = 0xE3; x++; cpurom[x] = 0x03; x++;		// ld XIX,(XIX+W)
+				cpurom[x] = 0xF0; x++; cpurom[x] = 0xE1; x++;		//
+				cpurom[x] = 0x24; x++;								//
+				cpurom[x] = 0xB4; x++; cpurom[x] = 0xE8; x++;		// call XIX
+				cpurom[x] = 0x5C; x++;								// pop XIX
+				cpurom[x] = 0x07; x++;								// reti
+				*((unsigned int *)(&cpurom[0xff04])) = (unsigned int)0x00fff000;
+				// setup interrupt code
+				for(i=0; i<sizeof(ngpInterruptCode); i++) {
+					cpurom[0xf800+i] = ngpInterruptCode[i];
+				}
+				// setup interrupt vectors
+				for(i=0; i<sizeof(ngpVectors)/4; i++) {
+					*((unsigned int *)(&cpurom[0xff00+4*i])) = ngpVectors[i];
+				}
 
-            // setup the additional CPU ram
-            // interrupt priorities, timer settings, transfer settings, etc
-            for(i=0; i<sizeof(ngpcpuram); i++)
-            {
-                cpuram[i] = ngpcpuram[i];
-            }
+				// setup the additional CPU ram
+				// interrupt priorities, timer settings, transfer settings, etc
+				for(i=0; i<sizeof(ngpcpuram); i++)
+				{
+					cpuram[i] = ngpcpuram[i];
+				}
 
 
-			//koyote.bin handling
-            memcpy(mainram,koyote_bin,KOYOTE_BIN_SIZE/*12*1024*/);
+				//koyote.bin handling
+				memcpy(mainram,koyote_bin,KOYOTE_BIN_SIZE/*12*1024*/);
 
-			// setup interrupt vectors in RAM
-			for(i=0; i<18; i++) {
-				*((unsigned int *)(&mainram[0x2FB8+4*i])) = (unsigned int)0x00FFF800;
+				// setup interrupt vectors in RAM
+				for(i=0; i<18; i++) {
+					*((unsigned int *)(&mainram[0x2FB8+4*i])) = (unsigned int)0x00FFF800;
+				}
+				mainram[0x6F80-0x4000] = 0xFF; //Lots of battery power!
+				mainram[0x6F81-0x4000] = 0x03;
+				mainram[0x6F95-0x4000] = 0x10;
+				mainram[0x6F91-0x4000] = 0x10; // Colour bios
+				mainram[0x6F84-0x4000] = 0x40; // "Power On" startup
+				mainram[0x6F85-0x4000] = 0x00; // No shutdown request
+				mainram[0x6F86-0x4000] = 0x00; // No user answer (?)
+				mainram[0x6F87-0x4000] = 0x01; //English
 			}
-            mainram[0x6F80-0x4000] = 0xFF; //Lots of battery power!
-            mainram[0x6F81-0x4000] = 0x03;
-            mainram[0x6F95-0x4000] = 0x10;
-            mainram[0x6F91-0x4000] = 0x10; // Colour bios
-            mainram[0x6F84-0x4000] = 0x40; // "Power On" startup
-            mainram[0x6F85-0x4000] = 0x00; // No shutdown request
-            mainram[0x6F86-0x4000] = 0x00; // No user answer (?)
-            mainram[0x6F87-0x4000] = 0x01; //English
-        }
-		else
-		{
-            //this branch doesn't seem to work for some games (Puzzle Bobble)
- 		    realBIOSloaded = 1;
+			else
+			{
+				/* this branch doesn't seem to work for some games (Puzzle Bobble) */
+				realBIOSloaded = 1;
 
-            cpurom[0x3202]=0xf4;//from Koyote
-            cpurom[0x3203]=0x6b;//from Koyote
+				cpurom[0x3202]=0xf4;//from Koyote
+				cpurom[0x3203]=0x6b;//from Koyote
 
-            //koyote.bin handling
-            memcpy(mainram,koyote_bin,KOYOTE_BIN_SIZE/*12*1024*/);
+				//koyote.bin handling
+				memcpy(mainram,koyote_bin,KOYOTE_BIN_SIZE/*12*1024*/);
 
-            // setup the additional CPU ram
-            // interrupt priorities, timer settings, transfer settings, etc
-            for(i=0; i<sizeof(ngpcpuram); i++)
-            {
-                cpuram[i] = ngpcpuram[i];
-            }
+				// setup the additional CPU ram
+				// interrupt priorities, timer settings, transfer settings, etc
+				for(i=0; i<sizeof(ngpcpuram); i++)
+				{
+					cpuram[i] = ngpcpuram[i];
+				}
 
-            //following from Koyote
-            cpuram[0x006F] = 0x4E;  //Watchdog timer
-            cpuram[0x00B8] = 0xAA;  //No z80 at boot
-            cpuram[0x00B9] = 0xAA;
-            mainram[0x6F80-0x4000] = 0xFF; //Lots of battery power!
-            mainram[0x6F81-0x4000] = 0x03;
-            mainram[0x6F95-0x4000] = 0x10;
-            mainram[0x6F91-0x4000] = 0x10; // Colour bios
-            mainram[0x6F84-0x4000] = 0x40; // "Power On" startup
-            mainram[0x6F85-0x4000] = 0x00; // No shutdown request
-            mainram[0x6F86-0x4000] = 0x00; // No user answer (?)
+				//following from Koyote
+				cpuram[0x006F] = 0x4E;  //Watchdog timer
+				cpuram[0x00B8] = 0xAA;  //No z80 at boot
+				cpuram[0x00B9] = 0xAA;
+				mainram[0x6F80-0x4000] = 0xFF; //Lots of battery power!
+				mainram[0x6F81-0x4000] = 0x03;
+				mainram[0x6F95-0x4000] = 0x10;
+				mainram[0x6F91-0x4000] = 0x10; // Colour bios
+				mainram[0x6F84-0x4000] = 0x40; // "Power On" startup
+				mainram[0x6F85-0x4000] = 0x00; // No shutdown request
+				mainram[0x6F86-0x4000] = 0x00; // No user answer (?)
 
-            mainram[0x6F87-0x4000] = 0x01; //English
-		}
+				mainram[0x6F87-0x4000] = 0x01; //English
+			}
 
-        mainram[0x4000] = 0xC0;		// Enable generation of VBlanks by default
-        mainram[0x4004] = 0xFF;	mainram[0x4005] = 0xFF;
-        mainram[0x4006] = 0xC6;
-        for(i=0; i<5; i++) {
-            mainram[0x4101+4*i] = 0x07;	mainram[0x4102+4*i] = 0x07;	mainram[0x4103+4*i] = 0x07;
-        }
-        mainram[0x4118] = 0x07;
-        mainram[0x43E0] = mainram[0x43F0] = 0xFF; mainram[0x43E1] = mainram[0x43F1] = 0x0F;
-        mainram[0x43E2] = mainram[0x43F2] = 0xDD; mainram[0x43E3] = mainram[0x43F3] = 0x0D;
-        mainram[0x43E4] = mainram[0x43F4] = 0xBB; mainram[0x43E5] = mainram[0x43F5] = 0x0B;
-        mainram[0x43E6] = mainram[0x43F6] = 0x99; mainram[0x43E7] = mainram[0x43F7] = 0x09;
-        mainram[0x43E8] = mainram[0x43F8] = 0x77; mainram[0x43E9] = mainram[0x43F9] = 0x07;
-        mainram[0x43EA] = mainram[0x43FA] = 0x44; mainram[0x43EB] = mainram[0x43FB] = 0x04;
-        mainram[0x43EC] = mainram[0x43FC] = 0x33; mainram[0x43ED] = mainram[0x43FD] = 0x03;
-        mainram[0x43EE] = mainram[0x43FE] = 0x00; mainram[0x43EF] = mainram[0x43FF] = 0x00;
+			mainram[0x4000] = 0xC0;		// Enable generation of VBlanks by default
+			mainram[0x4004] = 0xFF;	mainram[0x4005] = 0xFF;
+			mainram[0x4006] = 0xC6;
+			for(i=0; i<5; i++)
+			{
+				mainram[0x4101+4*i] = 0x07;
+				mainram[0x4102+4*i] = 0x07;
+				mainram[0x4103+4*i] = 0x07;
+			}
+			mainram[0x4118] = 0x07;
+			mainram[0x43E0] = mainram[0x43F0] = 0xFF; mainram[0x43E1] = mainram[0x43F1] = 0x0F;
+			mainram[0x43E2] = mainram[0x43F2] = 0xDD; mainram[0x43E3] = mainram[0x43F3] = 0x0D;
+			mainram[0x43E4] = mainram[0x43F4] = 0xBB; mainram[0x43E5] = mainram[0x43F5] = 0x0B;
+			mainram[0x43E6] = mainram[0x43F6] = 0x99; mainram[0x43E7] = mainram[0x43F7] = 0x09;
+			mainram[0x43E8] = mainram[0x43F8] = 0x77; mainram[0x43E9] = mainram[0x43F9] = 0x07;
+			mainram[0x43EA] = mainram[0x43FA] = 0x44; mainram[0x43EB] = mainram[0x43FB] = 0x04;
+			mainram[0x43EC] = mainram[0x43FC] = 0x33; mainram[0x43ED] = mainram[0x43FD] = 0x03;
+			mainram[0x43EE] = mainram[0x43FE] = 0x00; mainram[0x43EF] = mainram[0x43FF] = 0x00;
 
-		// Setup z80 functions
-		z80MemReadB = z80ngpMemReadB;
-		z80MemReadW = z80ngpMemReadW;
-		z80MemWriteB = z80ngpMemWriteB;
-		z80MemWriteW = z80ngpMemWriteW;
-		z80PortWriteB = z80ngpPortWriteB;
-		z80PortReadB = z80ngpPortReadB;
-		break;
+			// Setup z80 functions
+			z80MemReadB = z80ngpMemReadB;
+			z80MemReadW = z80ngpMemReadW;
+			z80MemWriteB = z80ngpMemWriteB;
+			z80MemWriteW = z80ngpMemWriteW;
+			z80PortWriteB = z80ngpPortWriteB;
+			z80PortReadB = z80ngpPortReadB;
+			break;
 	}
 }

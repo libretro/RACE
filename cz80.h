@@ -15,15 +15,13 @@ extern "C" {
 
 #include <stdint.h>
 
-//#define CZ80_FASTCALL   __fastcall
 #define CZ80_FASTCALL
-
 
 /*************************************/
 /* Z80 core Structures & definitions */
 /*************************************/
 
-#define CZ80_FETCH_BITS         4   // [4-12]   default = 8
+#define CZ80_FETCH_BITS         4   /* [4-12]   default = 8 */
 
 #define CZ80_FETCH_SFT          (16 - CZ80_FETCH_BITS)
 #define CZ80_FETCH_BANK         (1 << CZ80_FETCH_BITS)
@@ -34,10 +32,6 @@ extern "C" {
 #define CZ80_USE_WORD_HANDLER   0
 #define CZ80_EXACT              0
 #define CZ80_DEBUG              0
-
-//use MAME's change_pc function or internal?
-//#define CZ80_USE_MAME_CHANGE_PC 
-
 
 #define CZ80_SF_SFT     7
 #define CZ80_ZF_SFT     6
@@ -69,7 +63,6 @@ extern "C" {
 #define CZ80_HALTED     0x20
 #define CZ80_FAULTED    0x80
 #define CZ80_DISABLE    0x40
-
 
 typedef uint32_t  CZ80_FASTCALL CZ80_READ(uint32_t adr);
 typedef void CZ80_FASTCALL CZ80_WRITE(uint32_t adr, uint32_t data);
@@ -117,7 +110,7 @@ typedef struct
         union16 r16[4];
         struct
         {
-            union16 BC;         // 32 bytes aligned
+            union16 BC;         /* 32 bytes aligned */
             union16 DE;
             union16 HL;
             union16 FA;
@@ -134,29 +127,20 @@ typedef struct
     union16 HL2;
     union16 FA2;
 
-	union16 R;
-	union16 IFF;
-	
-	uint8_t I;
-	uint8_t IM;
-	uint8_t IntVect;
-	uint8_t Status;
+    union16 R;
+    union16 IFF;
 
-	uint32_t BasePC;
-	uint32_t CycleIO;
-	
-	uint32_t CycleToDo;     // 32 bytes aligned
-	uint32_t CycleSup;
+    uint8_t I;
+    uint8_t IM;
+    uint8_t IntVect;
+    uint8_t Status;
+
+    uint32_t BasePC;
+    uint32_t CycleIO;
+
+    uint32_t CycleToDo;     /* 32 bytes aligned */
+    uint32_t CycleSup;
 } cz80_struc;
-
-
-
-/*************************/
-/* Publics Z80 variables */
-/*************************/
-
-//extern cz80_struc CZ80;
-
 
 /*************************/
 /* Publics Z80 functions */
@@ -230,5 +214,5 @@ void    CZ80_FASTCALL Cz80_Set_I(cz80_struc *cpu, uint32_t value);
 }
 #endif
 
-#endif  // _CZ80_H_
+#endif  /* _CZ80_H_ */
 

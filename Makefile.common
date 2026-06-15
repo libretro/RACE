@@ -15,7 +15,6 @@ SOURCES_C := \
 	$(CORE_DIR)/graphics.c \
 	$(CORE_DIR)/main.c \
 	$(CORE_DIR)/flash.c \
-	$(CORE_DIR)/input.c \
 	$(CORE_DIR)/libretro/libretro.c \
 	$(CORE_DIR)/libretro/log.c \
 	$(CORE_DIR)/race-memory.c \

@@ -323,9 +323,6 @@ void CZ80_FASTCALL Cz80_Set_SP(cz80_struc *cpu, uint32_t value)
 
 void CZ80_FASTCALL Cz80_Set_PC(cz80_struc *cpu, uint32_t val)
 {
-#ifdef CZ80_USE_MAME_CHANGE_PC
-    change_pc16(val);
-#endif
     cpu->PC = (uint8_t*)&mame4all_cz80_rom[val];
 }
 

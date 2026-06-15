@@ -11,7 +11,7 @@ int32_t Z80_ICount;
 int32_t CZ80_FASTCALL Cz80_Exec(cz80_struc *cpu, int32_t cycles)
 {
 #if CZ80_USE_JUMPTABLE
-    #include "cz80jmp.inc"
+#include "cz80jmp.inc"
 #endif
 
 #if __x86__
@@ -28,30 +28,28 @@ int32_t CZ80_FASTCALL Cz80_Exec(cz80_struc *cpu, int32_t cycles)
     PC = CPU->PC;
 
     if (CPU->Status & (CZ80_RUNNING | CZ80_DISABLE | CZ80_FAULTED))
-    {
         return (CPU->Status | 0x80000000);
-    }
 
     CPU->CycleToDo = Z80_ICount = cycles;
     CPU->CycleSup = 0;
     CPU->Status |= CZ80_RUNNING;
     
 Cz80_Check_Int:
-    // check for interrupt
+    /* check for interrupt */
     if (CPU->Status & (zIFF1 | CZ80_HAS_NMI))
     {
         uint32_t newPC;
 
         if (CPU->Status & CZ80_HAS_NMI)
         {
-            // NMI
+            /* NMI */
             CPU->Status &= ~(CZ80_HALTED | CZ80_HAS_NMI);
             zIFF1 = 0;
             newPC = 0x66;
         }
         else
         {
-            // INT
+            /* INT */
             CPU->Status &= ~(CZ80_HALTED | CZ80_HAS_INT);
             zIFF= 0;
 
