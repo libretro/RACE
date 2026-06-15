@@ -7796,19 +7796,3 @@ void tlcs_execute(int cycles)
 
 
 //Flavor, this auto-frameskip code is messed up
-void ngpc_run(void)
-{
-#ifdef FRAMESKIP
-    unsigned int skipFrames=0;
-#endif /* FRAMESKIP */
-
-    while(m_bIsActive)  //should be some way to exit
-    {
-#ifdef FRAMESKIP
-        tlcs_execute((6*1024*1024) / 60, skipFrames);
-#else
-        tlcs_execute((6*1024*1024) / 60);
-#endif
-
-    }
-}

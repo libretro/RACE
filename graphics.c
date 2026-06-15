@@ -104,82 +104,6 @@ unsigned short p2[16] = {
 
 void (*palette_init)(uint32_t dwRBitMask, uint32_t dwGBitMask, uint32_t dwBBitMask);
 
-void palette_init32(uint32_t dwRBitMask, uint32_t dwGBitMask, uint32_t dwBBitMask)
-{
-/*    dbg_print("in palette_init32(0x%X, 0x%X, 0x%X)\n", dwRBitMask, dwGBitMask, dwBBitMask);
-
-    char RShiftCount = 0, GShiftCount = 0, BShiftCount = 0;
-    char RBitCount = 0, GBitCount = 0, BBitCount = 0;
-    int r,g,b;
-    uint32_t i;
-
-    i = dwRBitMask;
-    while (!(i&1))
-    {
-        i = i >> 1;
-        RShiftCount++;
-    }
-    while (i&1)
-    {
-        i = i >> 1;
-        RBitCount++;
-    }
-    i = dwGBitMask;
-    while (!(i&1))
-    {
-        i = i >> 1;
-        GShiftCount++;
-    }
-    while (i&1)
-    {
-        i = i >> 1;
-        GBitCount++;
-    }
-    i = dwBBitMask;
-    while (!(i&1))
-    {
-        i = i >> 1;
-        BShiftCount++;
-    }
-    while (i&1)
-    {
-        i = i >> 1;
-        BBitCount++;
-    }
-    switch(m_emuInfo.machine)
-    {
-        case NGP:
-        case NGPC:
-        case GAMEGEAR:
-        case LYNX:
-        case WONDERSWAN:
-        case WONDERSWANCOLOR:
-        case ADVISION:
-        for (b=0; b<16; b++)
-            for (g=0; g<16; g++)
-                for (r=0; r<16; r++)
-                    totalpalette[b*256+g*16+r] =
-                        (((b<<(BBitCount-4))+(b>>(4-(BBitCount-4))))<<BShiftCount) +
-                        (((g<<(GBitCount-4))+(g>>(4-(GBitCount-4))))<<GShiftCount) +
-                        (((r<<(RBitCount-4))+(r>>(4-(RBitCount-4))))<<RShiftCount);
-        break;
-        case GAMEBOY:
-        case GAMEBOYPOCKET:
-        case GAMEBOYCOLOR:
-        case SUPERGAMEBOY:
-        case SUPERVISION:
-        case NES:
-        for (b=0; b<32; b++)
-            for (g=0; g<32; g++)
-                for (r=0; r<32; r++)
-                    totalpalette[b*32*32+g*32+r] =
-                        (((b<<(BBitCount-5))+(b>>(5-(BBitCount-5))))<<BShiftCount) +
-                        (((g<<(GBitCount-5))+(g>>(5-(GBitCount-5))))<<GShiftCount) +
-                        (((r<<(RBitCount-5))+(r>>(5-(RBitCount-5))))<<RShiftCount);
-        break;
-    }*/
-}
-
 /* RGB range: [0,1] */
 static void darken_rgb(float *r, float *g, float *b)
 {
@@ -322,52 +246,6 @@ void graphicsSetDarkFilterLevel(unsigned filterLevel)
 
     if (dark_filter_level != prev_dark_filter_level)
         palette_init16(RMASK, GMASK, BMASK);      
-}
-
-void palette_init8(uint32_t dwRBitMask, uint32_t dwGBitMask, uint32_t dwBBitMask)
-{
-}
-
-void pngpalette_init(void)
-{
-/*    int r,g,b;
-
-    switch(m_emuInfo.machine)
-    {
-        case NGP:
-        case NGPC:
-        case GAMEGEAR:
-        case LYNX:
-        case WONDERSWAN:
-        case WONDERSWANCOLOR:
-        case ADVISION:
-        for (b=0; b<16; b++)
-            for (g=0; g<16; g++)
-                for (r=0; r<16; r++)
-                {
-                    totalpalette32[b*256+g*16+r] =
-                        (((b<<(8-4))+(b>>(4-(8-4))))<<0) +
-                        (((g<<(8-4))+(g>>(4-(8-4))))<<8) +
-                        (((r<<(8-4))+(r>>(4-(8-4))))<<16);
-                }
-        break;
-        case GAMEBOY:
-        case GAMEBOYPOCKET:
-        case GAMEBOYCOLOR:
-        case SUPERGAMEBOY:
-        case SUPERVISION:
-        case NES:
-        for (b=0; b<32; b++)
-            for (g=0; g<32; g++)
-                for (r=0; r<32; r++)
-                {
-                    totalpalette32[b*32*32+g*32+r] =
-                        (((b<<(8-5))+(b>>(5-(8-5))))<<0) +
-                        (((g<<(8-5))+(g>>(5-(8-5))))<<8) +
-                        (((r<<(8-5))+(r>>(5-(8-5))))<<16);
-                }
-        break;
-    }*/
 }
 
 /*

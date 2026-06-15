@@ -21,7 +21,6 @@ extern struct Z80_Regs Z80;
 #define Z80_NMI_INT 	-2    /* Execute NMI */
 #define Z80_IRQ_INT 	-1000 /* Execute IRQ */
 
-extern unsigned Z80_GetPC (void); /* Get program counter */
 extern int Z80_GetPreviousPC (void);
 extern void Z80_GetRegs (struct Z80_Regs *Regs);  /* Get registers */
 extern void Z80_SetRegs (struct Z80_Regs *Regs);  /* Set registers */

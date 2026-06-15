@@ -48,7 +48,6 @@ extern "C" {
 
 void WriteSoundChip(SoundChip* chip, uint8_t data);
 
-int sound_system_init(void);
 BOOL system_sound_init(void);
 void system_sound_chipreset(void);
 

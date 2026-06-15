@@ -20,11 +20,6 @@ void Z80_Reset(void)
 	Cz80_Reset(RACE_cz80_struc);
 }
 
-unsigned Z80_GetPC (void)
-{
-	return Cz80_Get_PC(RACE_cz80_struc);
-}
-
 void Z80_Cause_Interrupt(int type)
 {
 	if (type == Z80_NMI_INT)

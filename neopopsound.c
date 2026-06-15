@@ -422,12 +422,6 @@ void system_sound_chipreset(void)
    sound_init(44100);
 }
 
-int sound_system_init(void)
-{
-   system_sound_chipreset();	/* Resets chips */
-   return 1;
-}
-
 /* Accessors for the band-limited (Blip) audio path, so it reads exactly the
  * same decoded oscillator state that sample_chip_tone/sample_chip_noise use,
  * rather than re-decoding the registers (which split tone frequency and volume
