@@ -232,41 +232,12 @@ void WriteSoundChip(SoundChip* chip, _u8 data)
          case 3:	/* tone 1 : volume */
          case 5:	/* tone 2 : volume */
          case 7:	/* noise  : volume */
-#ifdef NEOPOP_DEBUG
-            if (filter_sound)
-            {
-               if (chip == &toneChip)
-                  system_debug_message("sound (T): Set Tone %d Volume to %d (0 = min, 15 = max)", c, 15 - (data & 0xF));
-               else
-                  system_debug_message("sound (N): Set Tone %d Volume to %d (0 = min, 15 = max)", c, 15 - (data & 0xF));
-            }
-#endif
             chip->Volume[c] = VolTable[data & 0xF];
             break;
 
          case 6:	/* noise  : frequency, mode */
             {
                int n = chip->Register[6];
-#ifdef NEOPOP_DEBUG
-               if (filter_sound)
-               {
-                  char *pm, *nm = "White";
-                  if ((n & 4)) nm = "Periodic";
-
-                  switch(n & 3)
-                  {
-                     case 0: pm = "N/512"; break;
-                     case 1: pm = "N/1024"; break;
-                     case 2: pm = "N/2048"; break;
-                     case 3: pm = "Tone#2"; break;
-                  }
-
-                  if (chip == &toneChip)
-                     system_debug_message("sound (T): Set Noise Mode to %s, Period = %s", nm, pm);
-                  else
-                     system_debug_message("sound (N): Set Noise Mode to %s, Period = %s", nm, pm);
-               }
-#endif
                chip->NoiseFB = (n & 4) ? FB_WNOISE : FB_PNOISE;
                n &= 3;
                /* N/512,N/1024,N/2048,Tone #2 output */
@@ -299,15 +270,6 @@ void WriteSoundChip(SoundChip* chip, _u8 data)
                if ((chip->Register[6] & 0x03) == 0x03)
                   chip->Period[3] = chip->Period[2]<<1;
             }
-#ifdef NEOPOP_DEBUG
-            if (filter_sound)
-            {
-               if (chip == &toneChip)
-                  system_debug_message("sound (T): Set Tone %d Frequency to %d", c, chip->Register[r]);
-               else
-                  system_debug_message("sound (N): Set Tone %d Frequency to %d", c, chip->Register[r]);
-            }
-#endif
             break;
       }
 	}

@@ -90,11 +90,6 @@ extern int fixsoundmahjong;
 unsigned char Ztable[256];            // zero and sign flags table for faster setting
 unsigned char SZtable[256];            // zero and sign flags table for faster setting
 
-//#define USE_PARITY_TABLE  //this is currently broken!
-#ifdef USE_PARITY_TABLE
-unsigned char parityVtable[256];            // zero and sign flags table for faster setting
-#endif
-
 // declare all registers
 // XWA0, XBC0, XDE0, XHL0,    0,1,2,3
 // XWA1, XBC1, XDE1, XHL1,    4,5,6,7
@@ -2256,9 +2251,6 @@ int extsrL(void) // EXTS r    11101rrr 00010011
 
 static INLINE void parityB(unsigned char j)
 {
-#ifdef USE_PARITY_TABLE //speed hack
-    gen_regsSR = (gen_regsSR & ~VF) | parityVtable[j];
-#else
     unsigned char k=0, i;
 
     for (i=0;i<8;i++)
@@ -2268,14 +2260,10 @@ static INLINE void parityB(unsigned char j)
         j = j>>1;
     }
     gen_regsSR = (gen_regsSR & ~VF) | ((k&1) ? 0 : VF);
-#endif
 }
 
 static INLINE void parityW(unsigned short j)
 {
-#ifdef USE_PARITY_TABLE //speed hack
-    gen_regsSR = (gen_regsSR & ~VF) | (parityVtable[j>>8] ^ parityVtable[j&0xFF]);
-#else
     unsigned char k=0, i;
 
     for (i=0;i<16;i++)
@@ -2285,14 +2273,10 @@ static INLINE void parityW(unsigned short j)
         j = j>>1;
     }
     gen_regsSR = (gen_regsSR & ~VF) | ((k&1) ? 0 : VF);
-#endif
 }
 
 static INLINE void parityL(unsigned int j)
 {
-#ifdef USE_PARITY_TABLE //speed hack
-    gen_regsSR = (gen_regsSR & ~VF) | (parityVtable[(j>>24)&0xFF] ^ parityVtable[(j>>16)&0xFF] ^ parityVtable[(j>>8)&0xFF] ^ parityVtable[j&0xFF]);
-#else
     unsigned char k=0, i;
 
     for (i=0;i<32;i++)
@@ -2302,7 +2286,6 @@ static INLINE void parityL(unsigned int j)
         j = j>>1;
     }
     gen_regsSR = (gen_regsSR & ~VF) | ((k&1) ? 0 : VF);
-#endif
 }
 
 int daar(void)  // DAA r    11001rrr 00010000
@@ -2378,13 +2361,9 @@ int daar(void)  // DAA r    11001rrr 00010000
                  (*regB & SF) |
                  ((*regB) ? 0 : ZF) |
                  (((oldB^addVal)^*regB) & HF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[*regB];
-#else
 				 ;
     // calculate parity
     parityB(*regB);
-#endif
     return 6;
 }
 
@@ -2800,12 +2779,8 @@ unsigned char MyAndB(unsigned char i, unsigned char j)
     gen_regsSR = gen_regsSR |
                  (i & SF) |
                  ((i) ? HF : HF|ZF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[i];
-#else
 				 ;
     parityB(i);
-#endif
     return i;
 }
 
@@ -2913,12 +2888,8 @@ static INLINE unsigned char MyOrB(unsigned char i, unsigned char j)
     gen_regsSR = gen_regsSR |
                  (i & SF) |
                  ((i) ? 0 : ZF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[i];
-#else
 				 ;
     parityB(i);
-#endif
 
     return i;
 }
@@ -3027,12 +2998,8 @@ static INLINE unsigned char MyXorB(unsigned char i, unsigned char j)
     gen_regsSR = gen_regsSR |
                  (i & SF) |
                  ((i) ? 0 : ZF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[i];
-#else
 				 ;
     parityB(i);
-#endif
 
     return i;
 }
@@ -3883,12 +3850,8 @@ static INLINE unsigned char MyRlcB(unsigned char i, unsigned char nr)
                  (i & SF) |
                  ((i) ? 0 : ZF) |
                  (i & CF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[i];
-#else
 				 ;
     parityB(i);
-#endif
 
     return i;
 }
@@ -4003,12 +3966,8 @@ unsigned char MyRrcB(unsigned char i, unsigned char nr)
     gen_regsSR = gen_regsSR |
                  ((i & SF) ? SF|CF : 0) |
                  ((i) ? 0 : ZF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[i];
-#else
 				 ;
     parityB(i);
-#endif
 
     return i;
 }
@@ -4123,12 +4082,8 @@ unsigned char MyRlB(unsigned char i, unsigned char nr)
     gen_regsSR = gen_regsSR |
                  (i & SF) |
                  ((i) ? 0 : ZF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[i];
-#else
 				 ;
     parityB(i);
-#endif
 
     return i;
 }
@@ -4247,12 +4202,8 @@ unsigned char MyRrB(unsigned char i, unsigned char nr)
     gen_regsSR = gen_regsSR |
                  (i & SF) |
                  ((i) ? 0 : ZF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[i];
-#else
 				 ;
     parityB(i);
-#endif
 
     return i;
 }
@@ -4366,12 +4317,8 @@ unsigned char MySlaB(unsigned char i, unsigned char nr)
     gen_regsSR = gen_regsSR |
                  (i & SF) |
                  ((i) ? 0 : ZF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[i];
-#else
 				 ;
     parityB(i);
-#endif
 
     return i;
 }
@@ -4475,12 +4422,8 @@ static INLINE unsigned char MySraB(unsigned char i, unsigned char nr)
     gen_regsSR = gen_regsSR |
                  (i & SF) |
                  ((i) ? 0 : ZF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[i];
-#else
 				 ;
     parityB(i);
-#endif
 
     return i;
 }
@@ -4626,12 +4569,8 @@ static INLINE unsigned char MySrlB(unsigned char i, unsigned char nr)
     gen_regsSR = gen_regsSR |
                  (i & SF) |
                  ((i) ? 0 : ZF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[i];
-#else
 				 ;
     parityB(i);
-#endif
 
     return i;
 }
@@ -4727,12 +4666,8 @@ int rld00(void) // RLD A,(mem)   10000mmm 00000110
     gen_regsSR = gen_regsSR |
                  (*cregsB[1] & SF) |
                  ((*cregsB[1]) ? 0 : ZF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[*cregsB[1]];
-#else
 				 ;
    parityB(*cregsB[1]);
-#endif
 
    return 12;
 }
@@ -4750,12 +4685,8 @@ int rrd00(void) // RRD A,(mem)   10000mmm 00000111
     gen_regsSR = gen_regsSR |
                  (*cregsB[1] & SF) |
                  ((*cregsB[1]) ? 0 : ZF)
-#ifdef USE_PARITY_TABLE
-				 | parityVtable[*cregsB[1]];
-#else
 				 ;
    parityB(*cregsB[1]);
-#endif
     return 12;
 }
 
@@ -7235,17 +7166,6 @@ void tlcs_init(void)
 			Ztable[i] |= ZF;
 		SZtable[i] = (i & SF) | Ztable[i];
 
-#ifdef USE_PARITY_TABLE
-        int k=0;
-        j=i;
-        for (int loop=0;loop<8;loop++)
-        {
-            if (j&1)
-                k++;
-            j = j>>1;
-        }
-		parityVtable[i] = ((k&1) ? 0 : VF);
-#endif
 	}
 
     // initialize values of all registers
