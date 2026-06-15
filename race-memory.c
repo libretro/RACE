@@ -114,10 +114,10 @@ void z80ngpMemWriteB(unsigned short addr, unsigned char data) {
 	switch (addr)
 	{
 	case 0x4000:
-		Write_SoundChipNoise(data);//Flavor SN76496Write(0, data);
+		Write_SoundChipNoise(data);
 		return;
 	case 0x4001:
-		Write_SoundChipTone(data);//Flavor SN76496Write(0, data);
+		Write_SoundChipTone(data);
 		return;
 	case 0x8000:
 		cpuram[0xBC] = data;
@@ -138,12 +138,12 @@ void z80ngpMemWriteW(unsigned short addr, unsigned short data) {
 	switch (addr)
 	{
 	case 0x4000:
-		Write_SoundChipNoise(data&0xFF);//Flavor SN76496Write(0, data);
-		Write_SoundChipNoise(data>>8);//Flavor SN76496Write(0, data);
+		Write_SoundChipNoise(data&0xFF);
+		Write_SoundChipNoise(data>>8);
 		return;
 	case 0x4001:
-		Write_SoundChipTone(data&0xFF);//Flavor SN76496Write(0, data);
-		Write_SoundChipTone(data>>8);//Flavor SN76496Write(0, data);
+		Write_SoundChipTone(data&0xFF);
+		Write_SoundChipTone(data>>8);
 		return;
 	case 0x8000:
 		cpuram[0xBC] = data&0xFF;
@@ -172,10 +172,10 @@ void DrZ80ngpMemWriteB(unsigned char data, unsigned short addr)
 	}
 	switch (addr) {
 	case 0x4000:
-		Write_SoundChipNoise(data);//Flavor SN76496Write(0, data);
+		Write_SoundChipNoise(data);
 		return;
 	case 0x4001:
-		Write_SoundChipTone(data);//Flavor SN76496Write(0, data);
+		Write_SoundChipTone(data);
 		return;
 	case 0x8000:
 		cpuram[0xBC] = data;
@@ -197,12 +197,12 @@ void DrZ80ngpMemWriteW(unsigned short data, unsigned short addr)
 	switch (addr)
 	{
 	case 0x4000:
-		Write_SoundChipNoise(data&0xFF);//Flavor SN76496Write(0, data);
-		Write_SoundChipNoise(data>>8);//Flavor SN76496Write(0, data);
+		Write_SoundChipNoise(data&0xFF);
+		Write_SoundChipNoise(data>>8);
 		return;
 	case 0x4001:
-		Write_SoundChipTone(data&0xFF);//Flavor SN76496Write(0, data);
-		Write_SoundChipTone(data>>8);//Flavor SN76496Write(0, data);
+		Write_SoundChipTone(data&0xFF);
+		Write_SoundChipTone(data>>8);
 		return;
 	case 0x8000:
 		cpuram[0xBC] = data&0xFF;

@@ -97,7 +97,6 @@ unsigned char SZtable[256];            // zero and sign flags table for faster s
 // XWA3, XBC3, XDE3, XHL3,    12,13,14,15
 // XIX,  XIY,  XIZ,  XSP      16,17,18,19 XNSP = Normal Stack Pointer
 // PC,   SR,   XSSP, XNSP     20,21,22,23 XSSP = System Stack Pointer, XSP = current stack pointer
-//unsigned int gen_regs[24];
 unsigned int gen_regsXWA0, gen_regsXBC0, gen_regsXDE0, gen_regsXHL0, gen_regsXWA1,
 gen_regsXBC1, gen_regsXDE1, gen_regsXHL1, gen_regsXWA2, gen_regsXBC2,
 gen_regsXDE2, gen_regsXHL2, gen_regsXWA3, gen_regsXBC3, gen_regsXDE3,
@@ -108,20 +107,6 @@ unsigned int gen_regsPC, gen_regsSR;
 //#define gen_regsSRb ((unsigned char *)&gen_regsSR)[0]//lsbyte of gen_regsSR
 
 // declare struct for easy access to flags of flag register
-//struct SR0 {
-// unsigned int C0:1;
-// unsigned int N0:1;
-// unsigned int V0:1;
-// unsigned int dummy0:1;
-// unsigned int H0:1;
-// unsigned int dummy1:1;
-// unsigned int Z0:1;
-// unsigned int S0:1;
-// unsigned int RFP0:3;
-// unsigned int MAXM0:1;
-// unsigned int IFF0:3;
-// unsigned int SYSM0:1;
-//};
 // lower byte of SR: F
 //#define C ((*(struct SR0 *)(&gen_regsSR)).C0)
 //#define N ((*(struct SR0 *)(&gen_regsSR)).N0)
@@ -147,7 +132,6 @@ unsigned char F2;
 
 unsigned char *my_pc = NULL;
 
-//unsigned char *saved_my_pc;
 
 
 // pointers to all register(parts) that could be accessed in byte mode
@@ -190,7 +174,6 @@ unsigned int *regL, memL;
 //            opcode itself.
 unsigned char opcode;
 unsigned char lastbyte;
-//unsigned char opcode1, opcode2;
 
 // wrapper
 int  memoryCycles;
@@ -219,7 +202,6 @@ static INLINE unsigned int mem_readL(unsigned int addr)
 
 static INLINE void mem_writeB(unsigned int addr, unsigned char data)
 {
-    // if (addr > 0x200000) memoryCycles++;
     tlcsMemWriteB(addr, data);
 }
 
@@ -269,8 +251,6 @@ static INLINE void tlcsMemWriteBaddrB(unsigned char addr, unsigned char data)
 
    switch(addr)
    {
-      //case 0x80:	// CPU speed
-      //    break;
       case 0xA0:	// L CH Sound Source Control Register
          if (cpuram[0xB8] == 0x55 && cpuram[0xB9] == 0xAA)
             Write_SoundChipNoise(data);//Flavor SN76496Write(0, data);
@@ -282,15 +262,14 @@ static INLINE void tlcsMemWriteBaddrB(unsigned char addr, unsigned char data)
       case 0xA2:	// L CH DAC Control Register
          ngpSoundExecute();
          if (cpuram[0xB8] == 0xAA)
-            dac_writeL(data); //Flavor DAC_data_w(0,data);
+            dac_writeL(data);
          break;
          /*case 0xA3:	// R CH DAC Control Register  //Flavor hack for mono only sound
            ngpSoundExecute();
            if (cpuram[0xB8] == 0xAA)
-           dac_writeR(data);//Flavor DAC_data_w(1,data);
+           dac_writeR(data);
            break;*/
       case 0xB8:	// Z80 Reset
-         //				if (data == 0x55)	DAC_data_w(0,0);
       case 0xB9:	// Sourd Source Reset Control Register
          switch(data)
          {
@@ -352,7 +331,6 @@ static INLINE void tlcsMemWriteL(unsigned int addr, unsigned int data)
       tlcsFastMemWriteL(addr, data);
    }
    // tlcsFastMemWriteB() writes to
-   // mainram[((addr&0xFFFFFF)-0x00004000)]
    // > If (addr + 3) is greater than mainram
    //   size ((64+32+128)*1024) then buffer
    //   will overflow and core will likely
@@ -398,7 +376,6 @@ static INLINE unsigned char readbyteSetLastbyte(void)
         j = *((unsigned short *)my_pc);
         lastbyte = j>>8;
         my_pc+=2;
-        //return (j & 0xFF);
         return j;
     }
     return i;
@@ -482,7 +459,6 @@ static INLINE unsigned int read24(void)
         return i;
     }
 
-    //return i;
 }
 
 static INLINE unsigned int read24SetLastbyte(void)
@@ -509,7 +485,6 @@ static INLINE unsigned int read24SetLastbyte(void)
         return i;
     }
 
-    //return i;
 }
 
 static INLINE unsigned int readlong(void)
@@ -1127,16 +1102,11 @@ int ldi(void)  // LDI (XDE+),(XHL+) 10000011 00010000
     {
         // XDE/XHL
         mem_writeB((*cregsL[2])++,mem_readB((*cregsL[3])++));
-        //*cregsL[2]+=1;
-        //*cregsL[3]+=1;
     }
     else
     {
         // XIX/XIY
         mem_writeB(gen_regsXIX++,mem_readB(gen_regsXIY++));
-        //mem_writeB(*cregsL[4],mem_readB(*cregsL[5]));
-        //*cregsL[4]+=1;
-        //*cregsL[5]+=1;
     }
     *cregsW[1]-=1; // BC
     gen_regsSR = gen_regsSR & ~(HF|VF|NF);
@@ -1214,11 +1184,7 @@ int ldirw(void) // LDIRW (XDE+),(XHL+) 10010011 00010001
         mem_writeW(gen_regsXIX,mem_readW(gen_regsXIY));
         gen_regsXIX+=2;
         gen_regsXIY+=2;
-//        mem_writeW(*cregsL[4],mem_readW(*cregsL[5]));
-//        *cregsL[4]+= 2;
-//        *cregsL[5]+= 2;
     }
-    //*cregsW[1]-= 1; // BC
     gen_regsSR = gen_regsSR & ~(HF|VF|NF);
     if (--(*cregsW[1]))
     {
@@ -1226,12 +1192,10 @@ int ldirw(void) // LDIRW (XDE+),(XHL+) 10010011 00010001
         my_pc-=2;
         gen_regsSR = gen_regsSR | VF;
         return 14;
-        //  return 14+4;
     }
     else
     {
         return 10;
-        //  return 10+4;
     }
 }
 
@@ -1241,15 +1205,10 @@ int ldd(void)  // LDD (XDE-),(XHL-) 10000011 00010010
     if (opcode&2)
     { // XDE/XHL
         mem_writeB((*cregsL[2])--,mem_readB((*cregsL[3])--));
-        //*cregsL[2]-= 1;
-        //*cregsL[3]-= 1;
     }
     else
     {  // XIX/XIY
         mem_writeB(gen_regsXIX--,mem_readB(gen_regsXIY--));
-        //mem_writeB(*cregsL[4],mem_readB(*cregsL[5]));
-        //*cregsL[4]-= 1;
-        //*cregsL[5]-= 1;
     }
     *cregsW[1]-=1; // BC
     gen_regsSR = gen_regsSR & ~(HF|VF|NF);
@@ -1271,9 +1230,6 @@ int lddw(void)  // LDDW (XDE-),(XHL-) 10010011 00010010
         mem_writeW(gen_regsXIX,mem_readW(gen_regsXIY));
         gen_regsXIX-=2;
         gen_regsXIY-=2;
-//        mem_writeW(*cregsL[4],mem_readW(*cregsL[5]));
-//        *cregsL[4]-= 2;
-//        *cregsL[5]-= 2;
     }
     *cregsW[1]-=1; // BC
     gen_regsSR = gen_regsSR & ~(HF|VF|NF);
@@ -1287,17 +1243,11 @@ int lddr(void)  // LDDR (XDE-),(XHL-) 10000011 00010011
     if (opcode&2)
     { // XDE/XHL
         mem_writeB((*cregsL[2])--,mem_readB((*cregsL[3])--));
-        //*cregsL[2]-= 1;
-        //*cregsL[3]-= 1;
     }
     else
     {  // XIX/XIY
         mem_writeB(gen_regsXIX--,mem_readB(gen_regsXIY--));
-        //mem_writeB(*cregsL[4],mem_readB(*cregsL[5]));
-        //*cregsL[4]-= 1;
-        //*cregsL[5]-= 1;
     }
-//    *cregsW[1]-=1; // BC
     gen_regsSR = gen_regsSR & ~(HF|VF|NF);
     if (--(*cregsW[1]))
     {
@@ -1326,11 +1276,7 @@ int lddrw(void) // LDDRW (XDE-),(XHL-) 10010011 00010011
         mem_writeW(gen_regsXIX,mem_readW(gen_regsXIY));
         gen_regsXIX-=2;
         gen_regsXIY-=2;
-        //mem_writeW(*cregsL[4],mem_readW(*cregsL[5]));
-        //*cregsL[4]-= 2;
-        //*cregsL[5]-= 2;
     }
-    //*cregsW[1]-= 1; // BC
     gen_regsSR = gen_regsSR & ~(HF|VF|NF);
     if (--(*cregsW[1]))
     {
@@ -3514,7 +3460,6 @@ int swi(void) // SWI #3     11111xxx
 {
     tlcsFastMemWriteL(gen_regsXSP-=4,gen_regsPC);
     tlcsFastMemWriteW(gen_regsXSP-=2,gen_regsSR);
-    // SYSM = 1;
     gen_regsPC = mem_readL(0x00FFFF00 + ((opcode&7)<<2)) & 0x00ffffff;
     my_pc = get_address(gen_regsPC);
 
@@ -3558,7 +3503,6 @@ int incf(void) // INCF      00001100
     unsigned int i = gen_regsSR & 0x0700;
 
     i = (i + 0x0100) & 0x0700;
-    // for MAX mode
     i = i & 0x0300;
     gen_regsSR = (gen_regsSR & 0xf8ff) | i;
     set_cregs();
@@ -3570,7 +3514,6 @@ int decf(void) // DECF      00001101
     unsigned int i = gen_regsSR & 0x0700;
 
     i = (i - 0x0100) & 0x0700;
-    // for MAX mode
     i = i & 0x0300;
     gen_regsSR = (gen_regsSR & 0xf8ff) | i;
     set_cregs();
@@ -4765,14 +4708,9 @@ int jrcc7(void)  // JR cc,$+2+d8   0110cccc xxxxxxxx
 
 int jrcc8(void)  // JR cc,$+2+d8   0110cccc xxxxxxxx
 {
-    //if (cond8())//cond8 is always TRUE
-    //{
         doJumpByte();
         return 8;
-    //}
 
-    //skipJumpByte();
-    //return 4;
 }
 
 int jrcc9(void)  // JR cc,$+2+d8   0110cccc xxxxxxxx
@@ -4959,14 +4897,9 @@ int jrlcc7(void)  // JR cc,$+2+d16   0110cccc xxxxxxxx
 
 int jrlcc8(void)  // JR cc,$+2+d16   0110cccc xxxxxxxx
 {
-    //if (cond8())  //cond8 is always TRUE
-    //{
         doJumpWord();
         return 8;
-    //}
 
-    //skipJumpWord();
-    //return 4;
 }
 
 int jrlcc9(void)  // JR cc,$+2+d16   0110cccc xxxxxxxx
@@ -5154,14 +5087,10 @@ int jpccM307(void) // JP cc,mem
 
 int jpccM308(void) // JP cc,mem
 {
-    //if (cond8()) //always TRUE
-    //{
         gen_regsPC = mem;
         my_pc = get_address(gen_regsPC);
         return 8;
-    //}
     //else
-    //    return 4;
 }
 
 int jpccM309(void) // JP cc,mem
@@ -5383,14 +5312,10 @@ int callccM307(void) // CALL cc,mem  10110mmm 1110cccc
 
 int callccM308(void) // CALL cc,mem  10110mmm 1110cccc
 {
-    //if (cond8())//always TRUE
-    //{
 	    tlcsFastMemWriteL(gen_regsXSP-=4,gen_regsPC);
         my_pc = get_address(gen_regsPC = mem);
         return 12;
-    //}
     //else
-    //    return 6;
 }
 
 int callccM309(void) // CALL cc,mem  10110mmm 1110cccc
@@ -5621,15 +5546,11 @@ int retcc7(void) // RET cc    10110000 1111cccc
 
 int retcc8(void) // RET cc    10110000 1111cccc
 {
-    //if (cond8())//always TRUE
-    //{
         gen_regsPC = mem_readL(gen_regsXSP);
         gen_regsXSP+= 4;
         my_pc = get_address(gen_regsPC);
         return 12;
-    //}
     //else
-    //    return 6;
 }
 
 int retcc9(void) // RET cc    10110000 1111cccc
@@ -5745,7 +5666,6 @@ int reti(void)  // RETI     00000111
 
 int udef(void)
 {
-    //dbg_print("*** Call to udef() in tlcs900h core ***\n");
     m_bIsActive = FALSE;
     return 1;
 }
@@ -5792,7 +5712,6 @@ static INLINE unsigned char makeBCD(int i)
     return (upper<<4)|(i-(upper*10));
 }
 
-//extern "C" int 	sceUtilityGetSystemParamInt (int id, int *value);
 
 void initTimezone(void)
 {
@@ -6589,7 +6508,6 @@ int (*decode_tableF0[256])() =
         tset3M30, tset3M30, tset3M30, tset3M30, tset3M30, tset3M30, tset3M30, tset3M30,
         res3M30, res3M30, res3M30, res3M30, res3M30, res3M30, res3M30, res3M30,
         set3M30, set3M30, set3M30, set3M30, set3M30, set3M30, set3M30, set3M30,
-        //C0
         chg3M30, chg3M30, chg3M30, chg3M30, chg3M30, chg3M30, chg3M30, chg3M30,
         bit3M30, bit3M30, bit3M30, bit3M30, bit3M30, bit3M30, bit3M30, bit3M30,
         jpccM300, jpccM301, jpccM302, jpccM303, jpccM304, jpccM305, jpccM306, jpccM307,
@@ -6616,7 +6534,6 @@ int decode88(void)  // (XWA+d) (XBC+d) (XDE+d) (XHL+d) (XIX+d) (XIY+d) (XIZ+d) (
 {
     mem = (*cregsL[opcode&7])+(signed char)readbyteSetLastbyte();
     memB = mem_readB(mem);
-    //lastbyte = readbyte();
     return 2 + decode_table80[lastbyte]();
 }
 
@@ -6632,7 +6549,6 @@ int decode98(void)  // (XWA+d) (XBC+d) (XDE+d) (XHL+d) (XIX+d) (XIY+d) (XIZ+d) (
 {
     mem = (*cregsL[opcode&7])+(signed char)readbyteSetLastbyte();
     memW = mem_readW(mem);
-    //lastbyte = readbyte();
     return 2 + decode_table98[lastbyte]();
 }
 
@@ -6648,7 +6564,6 @@ int decodeA8(void)  // (XWA+d) (XBC+d) (XDE+d) (XHL+d) (XIX+d) (XIY+d) (XIZ+d) (
 {
     mem = (*cregsL[opcode&7])+(signed char)readbyteSetLastbyte();
     memL = mem_readL(mem);
-    //lastbyte = readbyte();
     return 2 + decode_tableA0[lastbyte]();
 }
 
@@ -6662,14 +6577,12 @@ int decodeB0(void)  // (XWA) (XBC) (XDE) (XHL) (XIX) (XIY) (XIZ) (XSP) dst
 int decodeB8(void)  // (XWA+d) (XBC+d) (XDE+d) (XHL+d) (XIX+d) (XIY+d) (XIZ+d) (XSP+d) dst
 {
     mem = (*cregsL[opcode&7])+(signed char)readbyteSetLastbyte();
-    //lastbyte = readbyte();
     return 2 + decode_tableB8[lastbyte]();
 }
 
 int decodeBB(void)  // (XWA+d) (XBC+d) (XDE+d) (XHL+d) (XIX+d) (XIY+d) (XIZ+d) (XSP+d) dst
 {
     mem = (*cregsL[opcode&7])+(signed char)readbyteSetLastbyte();
-    //lastbyte = readbyte();
     return 2 + decode_tableB8[lastbyte]();
 }
 
@@ -6718,13 +6631,11 @@ int decodeC3(void)  //       (mem)         scr.B
             case 0x03:
             reg = readbyte();
             mem = *allregsL[reg]+(signed char)(*allregsB[readbyte()]);
-            //   mem = *allregsL[reg]+*allregsB[readbyte()];
             retval = 8;
             break;
             case 0x07:
             reg = readbyte();
             mem = *allregsL[reg]+(signed short)(*allregsW[readbyte()]);
-            //   mem = *allregsL[reg]+*allregsW[readbyte()];
             retval = 8;
             break;
             case 0x13:
@@ -6747,7 +6658,6 @@ int decodeC4(void)  //         (-xrr)       scr.B
 
     mem = ((*allregsL[reg])-= 1<<(reg&3));  // pre-decrement
     memB = mem_readB(mem);
-    //lastbyte = readbyte();
     return 3 + decode_tableC0[lastbyte]();
 }
 
@@ -6758,14 +6668,12 @@ int decodeC5(void)  //           (xrr+)     scr.B
     mem = *allregsL[reg];
     memB = mem_readB(mem);
     *allregsL[reg]+= 1<<(reg&3);    // post-increment
-    //lastbyte = readbyte();
     return 3 + decode_tableC0[lastbyte]();
 }
 
 int decodeC7(void)  // r                reg.B
 {
     regB = allregsB[readbyteSetLastbyte()];
-    //lastbyte = readbyte();
     return 1 + decode_tableC8[lastbyte]();
 }
 
@@ -6780,7 +6688,6 @@ int decodeD0(void)  // (n)                scr.W
 {
     mem = readbyteSetLastbyte();
     memW = mem_readW(mem);
-    //lastbyte = readbyte();
     return 2 + decode_tableD0[lastbyte]();
 }
 
@@ -6788,7 +6695,6 @@ int decodeD1(void)  //   (nn)             scr.W
 {
     mem = readwordSetLastbyte();
     memW = mem_readW(mem);
-    //lastbyte = readbyte();
     return 2 + decode_tableD0[lastbyte]();
 }
 
@@ -6796,7 +6702,6 @@ int decodeD2(void)  //     (nnn)           scr.W
 {
     mem = read24SetLastbyte();
     memW = mem_readW(mem);
-    //lastbyte = readbyte();
     return 3 + decode_tableD0[lastbyte]();
 }
 
@@ -6824,13 +6729,11 @@ int decodeD3(void)  //       (mem)         scr.W
             case 0x03:
             reg = readbyte();
             mem = *allregsL[reg]+(signed char)(*allregsB[readbyte()]);
-            //   mem = *allregsL[reg]+*allregsB[readbyte()];
             retval = 8;
             break;
             case 0x07:
             reg = readbyte();
             mem = *allregsL[reg]+(signed short)(*allregsW[readbyte()]);
-            //   mem = *allregsL[reg]+*allregsW[readbyte()];
             retval = 8;
             break;
             case 0x13:
@@ -6853,7 +6756,6 @@ int decodeD4(void)  //         (-xrr)       scr.W
 
     mem = ((*allregsL[reg])-= 1<<(reg&3)); // pre-decrement
     memW = mem_readW(mem);
-    //lastbyte = readbyte();
     return 3 + decode_tableD0[lastbyte]();
 }
 
@@ -6864,14 +6766,12 @@ int decodeD5(void)  //           (xrr+)     scr.W
     mem = (*allregsL[reg]);
     memW = mem_readW(mem);
     *allregsL[reg]+= 1<<(reg&3);   // post-increment
-    //lastbyte = readbyte();
     return 3 + decode_tableD0[lastbyte]();
 }
 
 int decodeD7(void)  // r                reg.W
 {
     regW = allregsW[readbyteSetLastbyte()];
-    //lastbyte = readbyte();
     return 1 + decode_tableD8[lastbyte]();
 }
 
@@ -6886,7 +6786,6 @@ int decodeE0(void)  // (n)                scr.L
 {
     mem = readbyteSetLastbyte();
     memL = mem_readL(mem);
-    //lastbyte = readbyte();
     return 2 + decode_tableE0[lastbyte]();
 }
 
@@ -6894,7 +6793,6 @@ int decodeE1(void)  //   (nn)             scr.L
 {
     mem = readwordSetLastbyte();
     memL = mem_readL(mem);
-    //lastbyte = readbyte();
     return 2 + decode_tableE0[lastbyte]();
 }
 
@@ -6902,7 +6800,6 @@ int decodeE2(void)  //     (nnn)           scr.L
 {
     mem = read24SetLastbyte();
     memL = mem_readL(mem);
-    //lastbyte = readbyte();
     return 3 + decode_tableE0[lastbyte]();
 }
 
@@ -6930,13 +6827,11 @@ int decodeE3(void)  //       (mem)         scr.L
             case 0x03:
             reg = readbyte();
             mem = *allregsL[reg]+(signed char)(*allregsB[readbyte()]);
-            //   mem = *allregsL[reg]+*allregsB[readbyte()];
             retval = 8;
             break;
             case 0x07:
             reg = readbyte();
             mem = *allregsL[reg]+(signed short)(*allregsW[readbyte()]);
-            //   mem = *allregsL[reg]+*allregsW[readbyte()];
             retval = 8;
             break;
             case 0x13:
@@ -6959,7 +6854,6 @@ int decodeE4(void)  //         (-xrr)       scr.L
 
     mem = ((*allregsL[reg])-= 1<<(reg&3)); // pre-decrement
     memL = mem_readL(mem);
-    //lastbyte = readbyte();
     return 3 + decode_tableE0[lastbyte]();
 }
 
@@ -6970,14 +6864,12 @@ int decodeE5(void)  //           (xrr+)     scr.L
     mem = (*allregsL[reg]);
     memL = mem_readL(mem);
     *allregsL[reg]+= 1<<(reg&3);   // post-increment
-    //lastbyte = readbyte();
     return 3 + decode_tableE0[lastbyte]();
 }
 
 int decodeE7(void)  // r                reg.L
 {
     regL = allregsL[readbyteSetLastbyte()];
-    //lastbyte = readbyte();
     return 1 + decode_tableE8[lastbyte]();
 }
 
@@ -7030,13 +6922,11 @@ int decodeF3(void)  //       (mem)         dst
             case 0x03:
                reg = readbyte();
                mem = *allregsL[reg]+(signed char)(*allregsB[readbyte()]);
-               //   mem = *allregsL[reg]+*allregsB[readbyte()];
                retval = 8;
                break;
             case 0x07:
                reg = readbyte();
                mem = *allregsL[reg]+(signed short)(*allregsW[readbyte()]);
-               //   mem = *allregsL[reg]+*allregsW[readbyte()];
                retval = 8;
                break;
             case 0x13:
@@ -7236,8 +7126,6 @@ void tlcs_init(void)
     // neogeo pocket color specific settings for running rom dumps
     gen_regsPC = mem_readL(0x0020001c) & 0x00ffffff;
 
-//    if(realBIOSloaded)
-//        gen_regsPC = 0xFF1800;  //this is where Koyote starts when loading BIOS, but it doesn't work for me
 
     gen_regsXNSP = gen_regsXSP = 0x00006C00;
     my_pc = get_address(gen_regsPC);
@@ -7716,12 +7604,10 @@ static INLINE void tlcsTimers(int stateChange)
     //Flavor, unroll these two calls into one function
 
     // // check for updates
-    // if (0) {
     //  TREG0 = cpuram[0x22] ? cpuram[0x22] : 256;
     //  TREG1 = cpuram[0x23] ? cpuram[0x23] : 256;
     //  TREG2 = cpuram[0x26] ? cpuram[0x26] : 256;
     //  TREG3 = cpuram[0x27] ? cpuram[0x27] : 256;
-    // }
     // timer 0 + 1
     tlcs1Timer(stateChange, 0, T8RUN&3, T01MOD, &timer0, &timer1, TREG0, TREG1);
     // timer 2 + 3
@@ -7764,8 +7650,6 @@ static void tlcsTI0(void)
          timer0 = 0;     
 
       //Arregla ecup 0x12  
-      //if (mainrom[0x000020] == 0x12 && *scrollBackY==0 )
-      // timer0 = 0;     
 
       if (mainrom[0x000020] == 0x12)
       {
