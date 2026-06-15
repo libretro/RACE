@@ -368,41 +368,6 @@ void retro_set_video_refresh(retro_video_refresh_t cb)
    video_cb = cb;
 }
 
-static unsigned get_race_input_bitmasks(void)
-{
-   unsigned i = 0;
-   unsigned res = 0;
-   unsigned ret = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK);
-   for (i = 0; i < sizeof(btn_map) / sizeof(struct map); i++)
-      res |= (ret & (1 << btn_map[i].retro)) ? btn_map[i].ngp : 0;
-   return res;
-}
-
-static unsigned get_race_input(void)
-{
-   unsigned i = 0;
-   unsigned res = 0;
-   for (i = 0; i < sizeof(btn_map) / sizeof(struct map); i++)
-      res |= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, btn_map[i].retro) ? btn_map[i].ngp : 0;
-   return res;
-}
-
-static void race_input(void)
-{
-   ngpInputState = 0;
-   input_poll_cb();
-   if (libretro_supports_input_bitmasks)
-      ngpInputState = get_race_input_bitmasks();
-   else
-      ngpInputState = get_race_input();
-}
-
-static bool race_initialize_sound(void)
-{
-    system_sound_chipreset(RETRO_SAMPLE_RATE);
-    return true;
-}
-
 static bool race_initialize_system(const char *gamepath,
       const unsigned char *gamedata, size_t gamesize)
 {
@@ -459,7 +424,21 @@ void retro_run(void)
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
       check_variables(false);
 
-   race_input();
+   ngpInputState = 0;
+   input_poll_cb();
+   if (libretro_supports_input_bitmasks)
+   {
+	   unsigned i = 0;
+	   unsigned ret = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK);
+	   for (i = 0; i < sizeof(btn_map) / sizeof(struct map); i++)
+		   ngpInputState |= (ret & (1 << btn_map[i].retro)) ? btn_map[i].ngp : 0;
+   }
+   else
+   {
+	   unsigned i   = 0;
+	   for (i = 0; i < sizeof(btn_map) / sizeof(struct map); i++)
+		   ngpInputState |= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, btn_map[i].retro) ? btn_map[i].ngp : 0;
+   }
 
    /* Advance the deterministic RTC by one frame. */
    rtc_tick_frame();
@@ -663,13 +642,7 @@ bool retro_load_game(const struct retro_game_info *info)
       return false;
    }
 
-   if (!race_initialize_sound())
-   {
-      free(screen->pixels);
-      free(screen);
-      screen = NULL;
-      return false;
-   }
+   system_sound_chipreset(RETRO_SAMPLE_RATE);
 
    {
       /* TODO: Mappings might need updating
