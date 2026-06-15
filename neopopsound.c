@@ -374,6 +374,8 @@ void sound_init(int SampleRate)
 	 * 44100 value for any unexpected rate. */
 	if (SampleRate == 48000)
 		dcblock_r = 0.9986918594;
+	else if (SampleRate == 32000)
+		dcblock_r = 0.9980384310;
 	else
 		dcblock_r = 0.99858; /* 44100: exact original constant (no audio change) */
 

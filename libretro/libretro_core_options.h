@@ -145,6 +145,7 @@ struct retro_core_option_definition option_defs_us[] = {
       "Selects the output sample rate of the real-time sound synthesis. The NGPC has no sample-based sound hardware, so there is no single 'native' rate; higher rates reduce latency, eliminate aliasing, avoid low-pass smearing and give better time-domain resolution, at a small increase in CPU cost. 'Auto' queries the frontend's target rate and picks the closest supported value.",
       {
          { "auto",  "Auto" },
+         { "32000", "32KHz" },
          { "44100", "44KHz" },
          { "48000", "48KHz" },
          { NULL, NULL },

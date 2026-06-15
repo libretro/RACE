@@ -254,8 +254,10 @@ static void check_variables(bool first_run)
                /* Pick the nearest supported rate to the host's target. */
                if (target >= (44100 + 48000) / 2)
                   RETRO_SAMPLE_RATE = 48000;
-               else
+               else if (target >= (32000 + 44100) / 2)
                   RETRO_SAMPLE_RATE = 44100;
+               else
+                  RETRO_SAMPLE_RATE = 32000;
             }
             /* If the frontend can't report a target, keep the 44100 default. */
          }
@@ -264,7 +266,7 @@ static void check_variables(bool first_run)
             int rate = atoi(var.value);
             if (rate > AUDIO_MAX_SAMPLE_RATE)
                rate = AUDIO_MAX_SAMPLE_RATE;
-            if (rate == 48000 || rate == 44100)
+            if (rate == 48000 || rate == 44100 || rate == 32000)
                RETRO_SAMPLE_RATE = rate;
          }
       }
