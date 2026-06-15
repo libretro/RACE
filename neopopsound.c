@@ -172,12 +172,14 @@ static uint16_t sample_chip_noise(void)
 
 /* One-pole DC-blocking high-pass removes the PSG's DC offset so the output is
  * centered (matching the Mednafen/beetle-ngp reference) instead of unipolar.
- * y[n] = x[n] - x[n-1] + R*y[n-1], R for a ~10 Hz corner @ 44100 (below all
- * musical content, so bass is preserved). A double accumulator avoids the
- * fixed-point truncation bias that would otherwise reintroduce a DC offset. */
+ * y[n] = x[n] - x[n-1] + R*y[n-1]. R is set from the sample rate in sound_init
+ * to hold a ~10 Hz corner (below all musical content, so bass is preserved)
+ * regardless of the selected output rate: R = exp(-2*pi*fc/fs). A double
+ * accumulator avoids the fixed-point truncation bias that would otherwise
+ * reintroduce a DC offset. */
 static double dcblock_xprev = 0.0;
 static double dcblock_yprev = 0.0;
-#define DCBLOCK_R 0.99858
+static double dcblock_r = 0.99858; /* 44100 default; recomputed in sound_init */
 
 void sound_update(uint16_t* chip_buffer, int length_bytes)
 {
@@ -186,7 +188,7 @@ void sound_update(uint16_t* chip_buffer, int length_bytes)
    {
       /* Mix a mono track out of: (Tone + Noise) >> 1, then remove DC. */
       double x = (double)((sample_chip_tone() + sample_chip_noise()) >> 1);
-      double y = x - dcblock_xprev + DCBLOCK_R * dcblock_yprev;
+      double y = x - dcblock_xprev + dcblock_r * dcblock_yprev;
       int s;
       dcblock_xprev = x;
       dcblock_yprev = y;
@@ -366,6 +368,15 @@ void sound_init(int SampleRate)
 	/* number. */
 	UpdateStep = (uint32_t)(((double)STEP * SampleRate * 16) / SOUNDCHIPCLOCK);
 
+	/* DC-blocker pole for a ~10 Hz corner at the chosen rate: R = exp(-2*pi*fc/fs).
+	 * Precomputed for the supported rates so this stays free of a libm dependency
+	 * (the band-limited path was deliberately kept libm-free). Falls back to the
+	 * 44100 value for any unexpected rate. */
+	if (SampleRate == 48000)
+		dcblock_r = 0.9986918594;
+	else
+		dcblock_r = 0.99858; /* 44100: exact original constant (no audio change) */
+
 	/* Initialise Left Chip */
 	memset(&toneChip, 0, sizeof(SoundChip));
 
@@ -416,10 +427,10 @@ void sound_init(int SampleRate)
 
 /* ============================================================================= */
 
-void system_sound_chipreset(void)
+void system_sound_chipreset(int sample_rate)
 {
    /* Initialises sound chips, matching frequencies */
-   sound_init(44100);
+   sound_init(sample_rate);
 }
 
 /* Accessors for the band-limited (Blip) audio path, so it reads exactly the

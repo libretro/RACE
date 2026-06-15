@@ -49,7 +49,7 @@ extern "C" {
 void WriteSoundChip(SoundChip* chip, uint8_t data);
 
 BOOL system_sound_init(void);
-void system_sound_chipreset(void);
+void system_sound_chipreset(int sample_rate);
 
 void system_VBL(void);
 

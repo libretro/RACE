@@ -105,6 +105,22 @@ static void init_frameskip(void)
 /* core options */
 static int RETRO_SAMPLE_RATE = 44100;
 
+/* The NGPC has no sample-based sound hardware: audio is synthesised in real
+ * time, so the output sample rate is a free choice. The configurable rate is
+ * capped here, and the per-frame audio buffers are sized from that cap so they
+ * cannot overflow regardless of the selected rate.
+ *
+ * The buffers carry a headroom guard on top of the nominal samples-per-frame:
+ * the emulated CPU runs slightly more than clock/60 cycles per frame (the
+ * per-line loop overshoots its budget a little), so the band-limited path can
+ * legitimately produce a few more samples than sample_rate/60 in a frame
+ * (measured worst case ~805 at 48 kHz vs a nominal 800). The guard lets the
+ * frame drain completely instead of leaving a residue that would otherwise
+ * accumulate as growing latency. */
+#define AUDIO_MAX_SAMPLE_RATE     48000
+#define AUDIO_FRAME_GUARD         128
+#define AUDIO_SAMPLES_PER_FRAME   ((AUDIO_MAX_SAMPLE_RATE / 60) + AUDIO_FRAME_GUARD)
+
 struct ngp_screen* screen;
 int setting_ngp_language; /* 0x6F87 - language */
 
@@ -214,6 +230,44 @@ static void check_variables(bool first_run)
       else
          neopop_audio_accurate = 0;
    }
+
+   /* Output sample rate. Read on (re)start only: it is reported to the frontend
+    * in retro_get_system_av_info() and feeds the synthesis init, both fixed at
+    * load time. "auto" asks the frontend for its target rate and picks the
+    * nearest supported value; otherwise the literal rate is used. Supported
+    * rates are capped at AUDIO_MAX_SAMPLE_RATE so the audio buffers (sized from
+    * that cap) cannot overflow. */
+   if (first_run)
+   {
+      RETRO_SAMPLE_RATE = 44100;
+      var.key   = "race_audio_samplerate";
+      var.value = NULL;
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      {
+         if (!strcmp(var.value, "auto"))
+         {
+            float target = 0.0f;
+            if (environ_cb(RETRO_ENVIRONMENT_GET_TARGET_SAMPLE_RATE, &target)
+                  && target > 0.0f)
+            {
+               /* Pick the nearest supported rate to the host's target. */
+               if (target >= (44100.0f + 48000.0f) / 2.0f)
+                  RETRO_SAMPLE_RATE = 48000;
+               else
+                  RETRO_SAMPLE_RATE = 44100;
+            }
+            /* If the frontend can't report a target, keep the 44100 default. */
+         }
+         else
+         {
+            int rate = atoi(var.value);
+            if (rate > AUDIO_MAX_SAMPLE_RATE)
+               rate = AUDIO_MAX_SAMPLE_RATE;
+            if (rate == 48000 || rate == 44100)
+               RETRO_SAMPLE_RATE = rate;
+         }
+      }
+   }
 }
 
 void retro_init(void)
@@ -249,7 +303,7 @@ void retro_init(void)
 void retro_reset(void)
 {
    flashShutdown();
-   system_sound_chipreset();
+   system_sound_chipreset(RETRO_SAMPLE_RATE);
    mainemuinit();
 }
 
@@ -342,7 +396,7 @@ static void race_input(void)
 
 static bool race_initialize_sound(void)
 {
-    system_sound_chipreset();
+    system_sound_chipreset(RETRO_SAMPLE_RATE);
     return true;
 }
 
@@ -393,8 +447,8 @@ void retro_run(void)
 {
    unsigned i;
    bool updated = false;
-   static int16_t sampleBuffer[2048];
-   static int16_t stereoBuffer[2048];
+   static int16_t sampleBuffer[AUDIO_SAMPLES_PER_FRAME];
+   static int16_t stereoBuffer[AUDIO_SAMPLES_PER_FRAME * 2];
    int16_t *p = NULL;
    uint16_t samplesPerFrame;
    int skipFrame = 0;
@@ -463,8 +517,10 @@ void retro_run(void)
    if (neopop_audio_accurate)
    {
       /* Band-limited path: transitions were emitted into the Blip buffer as
-       * the CPU ran (via soundStep); flush them to interleaved stereo here. */
-      int n = neopop_blip_flush(stereoBuffer, 1024);
+       * the CPU ran (via soundStep); flush them to interleaved stereo here.
+       * The cap is the buffer's capacity in stereo frames (it holds
+       * AUDIO_SAMPLES_PER_FRAME pairs), so the drain can never overrun it. */
+      int n = neopop_blip_flush(stereoBuffer, AUDIO_SAMPLES_PER_FRAME);
       if (n > 0)
          audio_batch_cb(stereoBuffer, n);
    }
