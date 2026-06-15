@@ -1750,7 +1750,6 @@ int adcwMI10(void)
 
 static INLINE unsigned char MySubB(unsigned char i, unsigned char j)
 {
-#if 1//speed hack
     int res = i - j;
 	gen_regsSR &= ~(SF|ZF|HF|VF|NF|CF);
     gen_regsSR |= SZtable[res & 0xFF] |                             // S/Z flag
@@ -1759,25 +1758,10 @@ static INLINE unsigned char MySubB(unsigned char i, unsigned char j)
         ((res >> 8) & CF) | NF;               // C/N flag
     return res;
 
-#else
-	// 100% correct
-    unsigned char oldi = i;
-
-    i-= j;
-    gen_regsSR = gen_regsSR & ~(SF|ZF|HF|VF|NF|CF);
-    gen_regsSR = gen_regsSR |
-                 (i & SF) |
-                 ((i) ? NF : NF|ZF) |
-                 (((oldi^j)^i) & HF) |
-                 (((j^oldi) & (i^oldi) & 0x80) ? VF : 0) |
-                 ((i>oldi) ? CF : 0);
-    return i;
-#endif
 }
 
 static INLINE unsigned short MySubW(unsigned short i, unsigned short j)
 {
-#if 1//speed hack
     int res = i - j;
 	gen_regsSR &= ~(SF|ZF|HF|VF|NF|CF);
     gen_regsSR |= ((res>>8) & SF) |
@@ -1787,24 +1771,10 @@ static INLINE unsigned short MySubW(unsigned short i, unsigned short j)
         ((res >> 16) & CF) | NF;               // C/N flag
     return res;
 
-#else
-	unsigned short oldi = i;
-
-    i-= j;
-    gen_regsSR = gen_regsSR & ~(SF|ZF|HF|VF|NF|CF);//all of them
-    gen_regsSR = gen_regsSR |
-                 ((i>>8) & SF) |
-                 ((i) ? NF : NF|ZF) |
-                 (((oldi^j)^i) & HF) |
-                 (((j^oldi) & (i^oldi) & 0x8000) ?	VF : 0) |
-                 ((i>oldi) ? CF : 0);
-    return i;
-#endif
 }
 
 static INLINE unsigned int MySubL(unsigned int i, unsigned int j)
 {
-#if 1//speed hack
     unsigned int oldi = i;
 
     i-= j;
@@ -1815,18 +1785,6 @@ static INLINE unsigned int MySubL(unsigned int i, unsigned int j)
                  ((i>oldi) ? CF : 0) |
 				 NF;
     return i;
-#else
-    unsigned int oldi = i;
-
-    i-= j;
-    gen_regsSR = gen_regsSR & ~(SF|ZF|HF|VF|NF|CF);
-    gen_regsSR = gen_regsSR |
-                 ((i>>24) & SF) |
-                 ((i) ? NF : NF|ZF) |
-                 (((j^oldi) & (i^oldi) & 0x80000000) ? VF : 0) |
-                 ((i>oldi) ? CF : 0);
-    return i;
-#endif
 }
 
 int subRrB(void)

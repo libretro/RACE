@@ -334,23 +334,6 @@ const unsigned int ngpVectors[0x21] = {
 /* return 0 on fail */
 static unsigned char loadBIOS(void)
 {
-#if 0
-   int64_t bytesRead;
-   RFILE *biosFile = filestream_open("NPBIOS.BIN",
-	 RETRO_VFS_FILE_ACCESS_READ,
-	 RETRO_VFS_FILE_ACCESS_HINT_NONE);
-
-   if(!biosFile)
-      return 0;
-
-   bytesRead = filestream_read(biosFile, cpurom, 0x10000);
-   filestream_close(biosFile);
-
-   if(bytesRead != 0x10000)
-      return 0;
-   return 1;
-#endif
-
    /* Using a real bios file causes nothing but issues.
     * The relevant code path has not been thoroughly tested,
     * and there are known errors - e.g. the Test Mode button
