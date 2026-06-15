@@ -111,16 +111,16 @@ unsigned short p2[16] = {
  *
  */
 
-void (*palette_init)(DWORD dwRBitMask, DWORD dwGBitMask, DWORD dwBBitMask);
+void (*palette_init)(uint32_t dwRBitMask, uint32_t dwGBitMask, uint32_t dwBBitMask);
 
-void palette_init32(DWORD dwRBitMask, DWORD dwGBitMask, DWORD dwBBitMask)
+void palette_init32(uint32_t dwRBitMask, uint32_t dwGBitMask, uint32_t dwBBitMask)
 {
 /*    dbg_print("in palette_init32(0x%X, 0x%X, 0x%X)\n", dwRBitMask, dwGBitMask, dwBBitMask);
 
     char RShiftCount = 0, GShiftCount = 0, BShiftCount = 0;
     char RBitCount = 0, GBitCount = 0, BBitCount = 0;
     int r,g,b;
-    DWORD i;
+    uint32_t i;
 
     i = dwRBitMask;
     while (!(i&1))
@@ -226,12 +226,12 @@ static void darken_rgb(float *r, float *g, float *b)
     *b = (*b) * dark_factor;
 }
 
-void palette_init16(DWORD dwRBitMask, DWORD dwGBitMask, DWORD dwBBitMask)
+void palette_init16(uint32_t dwRBitMask, uint32_t dwGBitMask, uint32_t dwBBitMask)
 {
     char RShiftCount = 0, GShiftCount = 0, BShiftCount = 0;
     char RBitCount = 0, GBitCount = 0, BBitCount = 0;
     int  r,g,b;
-    DWORD i;
+    uint32_t i;
 
     i = dwRBitMask;
     while (!(i&1))
@@ -333,7 +333,7 @@ void graphicsSetDarkFilterLevel(unsigned filterLevel)
         palette_init16(RMASK, GMASK, BMASK);      
 }
 
-void palette_init8(DWORD dwRBitMask, DWORD dwGBitMask, DWORD dwBBitMask)
+void palette_init8(uint32_t dwRBitMask, uint32_t dwGBitMask, uint32_t dwBBitMask)
 {
 }
 

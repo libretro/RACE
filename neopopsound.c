@@ -43,7 +43,7 @@ SoundChip noiseChip;
 #define DAC_BUFFERSIZE		(256 * 1024) /* at (256 * 1024) the PC version will crash on MS2 intro */
 
 int dacLBufferRead, dacLBufferWrite, dacLBufferCount;
-_u16 dacBufferL[DAC_BUFFERSIZE];
+uint16_t dacBufferL[DAC_BUFFERSIZE];
 int fixsoundmahjong;
 
 /* ============================================================================= */
@@ -56,8 +56,8 @@ int fixsoundmahjong;
 #define MAX_OUTPUT_STEP 0x7fff0000
 #define STEP_SHIFT 16
 
-static _u32 VolTable[16];
-static _u32 UpdateStep = 0;	/* Number of steps during one sample. */
+static uint32_t VolTable[16];
+static uint32_t UpdateStep = 0;	/* Number of steps during one sample. */
 
 /* Formulas for noise generator */
 /* bit0 = output */
@@ -76,7 +76,7 @@ static _u32 UpdateStep = 0;	/* Number of steps during one sample. */
 
 /* ============================================================================= */
 
-static _u16 sample_chip_tone(void)
+static uint16_t sample_chip_tone(void)
 {
    int i;
    int vol[3];
@@ -126,7 +126,7 @@ static _u16 sample_chip_tone(void)
 
 /* ============================================================================= */
 
-static _u16 sample_chip_noise(void)
+static uint16_t sample_chip_noise(void)
 {
    int vol3 = 0;
    unsigned int out;
@@ -179,7 +179,7 @@ static double dcblock_xprev = 0.0;
 static double dcblock_yprev = 0.0;
 #define DCBLOCK_R 0.99858
 
-void sound_update(_u16* chip_buffer, int length_bytes)
+void sound_update(uint16_t* chip_buffer, int length_bytes)
 {
    length_bytes >>= 1; /* turn it into words */
    while (length_bytes)
@@ -193,7 +193,7 @@ void sound_update(_u16* chip_buffer, int length_bytes)
       s = (int)(y >= 0.0 ? y + 0.5 : y - 0.5);
       if (s >  32767) s =  32767;
       if (s < -32768) s = -32768;
-      *(chip_buffer++) = (_u16)(int16_t)s;
+      *(chip_buffer++) = (uint16_t)(int16_t)s;
 
       length_bytes--;
    }
@@ -201,7 +201,7 @@ void sound_update(_u16* chip_buffer, int length_bytes)
 
 /* ============================================================================= */
 
-void WriteSoundChip(SoundChip* chip, _u8 data)
+void WriteSoundChip(SoundChip* chip, uint8_t data)
 {
 	/* Command */
 	if (data & 0x80)
@@ -320,7 +320,7 @@ void dac_writeL(unsigned char data)
 
 }
  
-void dac_update(_u16* dac_buffer, int length_bytes)
+void dac_update(uint16_t* dac_buffer, int length_bytes)
 {
 	while (length_bytes > 1)
 	{
@@ -332,7 +332,7 @@ void dac_update(_u16* dac_buffer, int length_bytes)
 			int s = (int)(int16_t)*dac_buffer + (int)(int16_t)dacBufferL[dacLBufferRead];
 			if (s >  32767) s =  32767;
 			if (s < -32768) s = -32768;
-			*dac_buffer = (_u16)(int16_t)s;
+			*dac_buffer = (uint16_t)(int16_t)s;
 		}
 		dac_buffer++;
 		dacBufferL[dacLBufferRead] = 0;  /* silence? */
@@ -364,7 +364,7 @@ void sound_init(int SampleRate)
 	/* at the given sample rate. No. of events = sample rate / (clock/16). */
 	/* STEP is a multiplier used to turn the fraction into a fixed point */
 	/* number. */
-	UpdateStep = (_u32)(((double)STEP * SampleRate * 16) / SOUNDCHIPCLOCK);
+	UpdateStep = (uint32_t)(((double)STEP * SampleRate * 16) / SOUNDCHIPCLOCK);
 
 	/* Initialise Left Chip */
 	memset(&toneChip, 0, sizeof(SoundChip));
@@ -395,7 +395,7 @@ void sound_init(int SampleRate)
 	/* build volume table (2dB per step) */
 	for (i = 0;i < 15;i++)
 	{
-		VolTable[i] = (_u32)out;
+		VolTable[i] = (uint32_t)out;
 		out /= 1.258925412;	/* = 10 ^ (2/20) = 2dB */
 	}
 	VolTable[15] = 0;

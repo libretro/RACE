@@ -12,13 +12,6 @@
 
 #include <stdint.h>
 
-#define DWORD unsigned int
-
-#define _u8   unsigned char
-#define Uint8 unsigned char
-#define _u16  unsigned short
-#define _u32  unsigned int
-
 #define BOOL  int
 #define FALSE 0
 #define TRUE  (!0)

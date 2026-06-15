@@ -46,7 +46,7 @@ extern SoundChip noiseChip;
 extern "C" {
 #endif
 
-void WriteSoundChip(SoundChip* chip, _u8 data);
+void WriteSoundChip(SoundChip* chip, uint8_t data);
 
 int sound_system_init(void);
 BOOL system_sound_init(void);
@@ -59,8 +59,8 @@ void system_VBL(void);
 
 void sound_init(int SampleRate);
 
-void dac_update(_u16* dac_buffer, int length_bytes);
-void sound_update(_u16* chip_buffer, int length_bytes);
+void dac_update(uint16_t* dac_buffer, int length_bytes);
+void sound_update(uint16_t* chip_buffer, int length_bytes);
 
 void dac_writeL(unsigned char a);
 void dac_write(unsigned char a);
