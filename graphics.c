@@ -451,15 +451,15 @@ static INLINE void set_paletteCol(
     */
 
    for(i=0;i<16*4;i++)
-      sprite[i] = NGPC_TO_SDL16(palette_table[i]);
+      sprite[i] = NGPC_TO_RGB565(palette_table[i]);
 
    /* initialize front plane palette table */
    for(i=0;i<16*4;i++)
-      front[i] = NGPC_TO_SDL16(palette_table[i+16*4]);
+      front[i] = NGPC_TO_RGB565(palette_table[i+16*4]);
 
    /* initialize sprite palette table (?) */
    for(i=0;i<16*4;i++)
-      back[i] = NGPC_TO_SDL16(palette_table[i+16*4*2]);
+      back[i] = NGPC_TO_RGB565(palette_table[i+16*4*2]);
 }
 
 static INLINE void set_paletteBW(
@@ -475,14 +475,14 @@ static INLINE void set_paletteBW(
     for(i=0;i<4;i++)
     {
         /* initialize sprite palette table */
-        sprite[i] = NGPC_TO_SDL16(bwTable[pt[i] & 0x07]);
-        sprite[4+i] = NGPC_TO_SDL16(bwTable[pt[4+i] & 0x07]);
+        sprite[i] = NGPC_TO_RGB565(bwTable[pt[i] & 0x07]);
+        sprite[4+i] = NGPC_TO_RGB565(bwTable[pt[4+i] & 0x07]);
         /* initialize front plane palette table */
-        front[i] = NGPC_TO_SDL16(bwTable[pt[8+i] & 0x07]);
-        front[4+i] = NGPC_TO_SDL16(bwTable[pt[8+4+i] & 0x07]);
+        front[i] = NGPC_TO_RGB565(bwTable[pt[8+i] & 0x07]);
+        front[4+i] = NGPC_TO_RGB565(bwTable[pt[8+4+i] & 0x07]);
         /* initialize back plane palette table */
-        back[i] = NGPC_TO_SDL16(bwTable[pt[16+i] & 0x07]);
-        back[4+i] = NGPC_TO_SDL16(bwTable[pt[16+4+i] & 0x07]);
+        back[i] = NGPC_TO_RGB565(bwTable[pt[16+i] & 0x07]);
+        back[4+i] = NGPC_TO_RGB565(bwTable[pt[16+4+i] & 0x07]);
     }
 }
 
@@ -516,9 +516,6 @@ static INLINE void lineFront(TILECACHE *tC)
     unsigned char a,b;
     const unsigned char *p2;
     unsigned short *gb;
-
-    /* for 8bit SDL, this would set gb to the index of the proper color
-     * then, we'd set gb to p2[n]+(i*sizeof(palette)) */
 
     gb = tC->gbp;
     for (i=0;i<21;i++)
@@ -582,9 +579,6 @@ static INLINE void lineSprite(SPRITEDEFS *sprDefs)
    unsigned short *gb;
    unsigned char a,b;
    const unsigned char *p2;
-
-   /* for 8bit SDL, this would set gb to the index of the proper color
-    * then, we'd set gb to p2[n] */
 
    for (i=sprDefs->count[*scanlineY];i>0;i--)
    {
@@ -1090,7 +1084,7 @@ void myGraphicsBlitLine(unsigned char render)  /* NOTA */
 #endif
 			unsigned short bgcol;
             unsigned int bw = (m_emuInfo.machine == NGP);
-            unsigned short OOWCol = NGPC_TO_SDL16(oowTable[*oowSelect & 0x07]);
+            unsigned short OOWCol = NGPC_TO_RGB565(oowTable[*oowSelect & 0x07]);
             unsigned short* pal;
             unsigned short* mempal;
 
@@ -1110,12 +1104,12 @@ void myGraphicsBlitLine(unsigned char render)  /* NOTA */
     		        {
         		        for(i=0;i<4;i++)
             		    {
-	                	    myPalettes[i]     = NGPC_TO_SDL16(bwTable[bw_palette_table[i]    & 0x07]);
-		                    myPalettes[4+i]   = NGPC_TO_SDL16(bwTable[bw_palette_table[4+i]  & 0x07]);
-    		                myPalettes[64+i]  = NGPC_TO_SDL16(bwTable[bw_palette_table[8+i]  & 0x07]);
-        		            myPalettes[68+i]  = NGPC_TO_SDL16(bwTable[bw_palette_table[12+i] & 0x07]);
-            		        myPalettes[128+i] = NGPC_TO_SDL16(bwTable[bw_palette_table[16+i] & 0x07]);
-                		    myPalettes[132+i] = NGPC_TO_SDL16(bwTable[bw_palette_table[20+i] & 0x07]);
+	                	    myPalettes[i]     = NGPC_TO_RGB565(bwTable[bw_palette_table[i]    & 0x07]);
+		                    myPalettes[4+i]   = NGPC_TO_RGB565(bwTable[bw_palette_table[4+i]  & 0x07]);
+    		                myPalettes[64+i]  = NGPC_TO_RGB565(bwTable[bw_palette_table[8+i]  & 0x07]);
+        		            myPalettes[68+i]  = NGPC_TO_RGB565(bwTable[bw_palette_table[12+i] & 0x07]);
+            		        myPalettes[128+i] = NGPC_TO_RGB565(bwTable[bw_palette_table[16+i] & 0x07]);
+                		    myPalettes[132+i] = NGPC_TO_RGB565(bwTable[bw_palette_table[20+i] & 0x07]);
 		                }
     		        }
         		    else
@@ -1124,17 +1118,17 @@ void myGraphicsBlitLine(unsigned char render)  /* NOTA */
 						mempal = palette_table;
 
 						for (i=0;i<192;i++)
-							*(pal++) = NGPC_TO_SDL16(*(mempal++));
+							*(pal++) = NGPC_TO_RGB565(*(mempal++));
         		    }
 				}
 
 
 	            if(*bgSelect & 0x80)
-    	            bgcol = NGPC_TO_SDL16(bgTable[*bgSelect & 0x07]);
+    	            bgcol = NGPC_TO_RGB565(bgTable[*bgSelect & 0x07]);
         	    else if(bw)
-	                bgcol = NGPC_TO_SDL16(bwTable[0]);
+	                bgcol = NGPC_TO_RGB565(bwTable[0]);
     	        else
-        	        bgcol = NGPC_TO_SDL16(bgTable[0]); /* maybe 0xFFF? */
+        	        bgcol = NGPC_TO_RGB565(bgTable[0]); /* maybe 0xFFF? */
         	        
         	    /* NOTA arregla algo en m pure tlcsMemWriteB(0x83E0, 0xFF);     */
         	        
