@@ -763,25 +763,38 @@ void drawSprites(unsigned short* draw,
         }
         else if (cx+7<x1)
         {
+			/* Full 8-pixel sprite row: expand each pattern byte through the
+			 * mypatterns LUT and write the pixels straight out (bit-identical
+			 * to the per-pixel shift loop, verified for all pattern values). */
+			unsigned short* gb = &draw[cx];
+			const unsigned char* p2;
+			unsigned char lo = pattern & 0xff;
+			unsigned char hi = (pattern >> 8) & 0xff;
 			if (spr->flip&0x80)
 			{
-                for (;pattern;++cx)
-                {
-                    pix = pattern & 0x3;
-                    if (pix)
-                        draw[cx] = pal[pix];
-                    pattern>>=2;
-                }
+				p2 = &mypatterns[lo<<2];
+				if (p2[3]) gb[0] = pal[p2[3]];
+				if (p2[2]) gb[1] = pal[p2[2]];
+				if (p2[1]) gb[2] = pal[p2[1]];
+				if (p2[0]) gb[3] = pal[p2[0]];
+				p2 = &mypatterns[hi<<2];
+				if (p2[3]) gb[4] = pal[p2[3]];
+				if (p2[2]) gb[5] = pal[p2[2]];
+				if (p2[1]) gb[6] = pal[p2[1]];
+				if (p2[0]) gb[7] = pal[p2[0]];
 			}
 			else
 			{
-                for (cx+=7;pattern;--cx)
-                {
-                    pix = pattern & 0x3;
-                    if (pix)
-                        draw[cx] = pal[pix];
-                    pattern>>=2;
-                }
+				p2 = &mypatterns[hi<<2];
+				if (p2[0]) gb[0] = pal[p2[0]];
+				if (p2[1]) gb[1] = pal[p2[1]];
+				if (p2[2]) gb[2] = pal[p2[2]];
+				if (p2[3]) gb[3] = pal[p2[3]];
+				p2 = &mypatterns[lo<<2];
+				if (p2[0]) gb[4] = pal[p2[0]];
+				if (p2[1]) gb[5] = pal[p2[1]];
+				if (p2[2]) gb[6] = pal[p2[2]];
+				if (p2[3]) gb[7] = pal[p2[3]];
 			}
         }
         else
